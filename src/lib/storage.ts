@@ -2320,15 +2320,30 @@ class StorageEngine {
     this.logOutbox('update', 'asset', `Renewed Licence ${id}`);
   }
 
-  // Authentication & RBAC Session
+  // Authentication & RBAC Session (Strict No-Auto-Login)
   getAuthUser(): AuthUser | null {
-    return this.get<AuthUser | null>(STORAGE_KEYS.AUTH_USER, PREDEFINED_USERS[0].user);
+    try {
+      const sessionItem = sessionStorage.getItem(STORAGE_KEYS.AUTH_USER);
+      if (sessionItem) {
+        return JSON.parse(sessionItem);
+      }
+    } catch {
+      // ignore
+    }
+    return null;
   }
 
   setAuthUser(user: AuthUser | null): void {
-    this.set(STORAGE_KEYS.AUTH_USER, user);
-    if (user) {
-      this.setActiveRole(user.role);
+    try {
+      if (user) {
+        sessionStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
+        this.setActiveRole(user.role);
+      } else {
+        sessionStorage.removeItem(STORAGE_KEYS.AUTH_USER);
+        localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
+      }
+    } catch {
+      // fallback
     }
   }
 
@@ -2349,12 +2364,12 @@ class StorageEngine {
 
     return {
       success: false,
-      message: 'Invalid credentials. Please verify your email and password.',
+      message: 'Invalid email or password. Access denied.',
     };
   }
 
   logout(): void {
-    this.set(STORAGE_KEYS.AUTH_USER, null);
+    this.setAuthUser(null);
   }
 
   // Purchase Orders & Fulfillment

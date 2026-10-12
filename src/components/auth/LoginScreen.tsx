@@ -24,8 +24,8 @@ interface LoginScreenProps {
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const { isDark } = useTheme();
-  const [email, setEmail] = useState('admin@adalajfoods.com');
-  const [password, setPassword] = useState('Admin@2026');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [autoBackupOnLogin, setAutoBackupOnLogin] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -33,6 +33,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!email.trim() || !password.trim()) {
+      setError('Please provide both official email address and password.');
+      return;
+    }
+
     setLoading(true);
 
     setTimeout(() => {
@@ -47,15 +53,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
         }
         onLoginSuccess(res.user, backupFilename);
       } else {
-        setError(res.message || 'Invalid credentials. Please verify your login details.');
+        setError(res.message || 'Invalid email or password. Access denied.');
         setLoading(false);
       }
-    }, 250);
+    }, 200);
   };
 
-  const handleQuickSelectUser = (userEmail: string, userPass: string) => {
+  const handleQuickSelectEmail = (userEmail: string) => {
     setEmail(userEmail);
-    setPassword(userPass);
+    setPassword('');
     setError(null);
   };
 
@@ -183,11 +189,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             </button>
           </form>
 
-          {/* Quick Role Switcher Buttons */}
+          {/* Verified Role Accounts (Email Selector Only) */}
           <div className="mt-8 pt-6 border-t dark:border-slate-800">
             <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center justify-between">
-              <span>Quick Login by Verified Role:</span>
-              <span className="text-[10px] lowercase font-normal opacity-75">click to autofill</span>
+              <span>Authorized Enterprise Accounts:</span>
+              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">password required</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {PREDEFINED_USERS.map((item) => {
@@ -198,7 +204,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                   <button
                     key={item.user.id}
                     type="button"
-                    onClick={() => handleQuickSelectUser(item.email, item.password)}
+                    onClick={() => handleQuickSelectEmail(item.email)}
                     className={`p-2.5 text-left rounded-xl border text-xs transition cursor-pointer ${
                       isSelected
                         ? 'border-[#9A2229] bg-[#9A2229]/10 text-[#9A2229] dark:bg-amber-500/10 dark:border-amber-400 dark:text-amber-300 font-bold'
