@@ -18,19 +18,27 @@ import {
   Megaphone,
   Sun,
   Moon,
+  FileText,
+  Truck,
+  LogOut,
+  Download,
+  UserCheck,
 } from 'lucide-react';
-import { UserRole } from '../../types';
+import { UserRole, AuthUser, ROLE_PERMISSIONS } from '../../types';
 import { db } from '../../lib/storage';
 import { PWAInstallButton } from './PWAInstallButton';
 import { OfflineIndicator } from './OfflineIndicator';
 import { useDeviceAdaptive } from '../../hooks/useDeviceAdaptive';
 import { AdalajLogo } from '../common/AdalajLogo';
 import { useTheme } from '../../context/ThemeContext';
+import { triggerAutomaticJsonBackup } from '../../lib/backup';
 
 interface AppLayoutProps {
   activeModule: string;
   onSelectModule: (module: string) => void;
   onOpenQuickAdd: () => void;
+  currentUser: AuthUser | null;
+  onLogout: () => void;
   children: React.ReactNode;
 }
 
@@ -38,24 +46,44 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   activeModule,
   onSelectModule,
   onOpenQuickAdd,
+  currentUser,
+  onLogout,
   children,
 }) => {
   const { isPhonePortrait, isPhoneLandscape, isSquare } = useDeviceAdaptive();
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { toggleTheme, isDark } = useTheme();
 
-  const [activeRole, setActiveRole] = useState<UserRole>(db.getActiveRole());
+  const [activeRole, setActiveRole] = useState<UserRole>(currentUser?.role || db.getActiveRole());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [backupToast, setBackupToast] = useState<string | null>(null);
 
   const handleRoleChange = (role: UserRole) => {
     setActiveRole(role);
     db.setActiveRole(role);
+    if (currentUser) {
+      db.setAuthUser({
+        ...currentUser,
+        role,
+      });
+    }
   };
 
-  const navItems = [
+  const handleQuickBackup = () => {
+    const res = triggerAutomaticJsonBackup(currentUser?.name);
+    if (res.success) {
+      setBackupToast(`Backup JSON saved: ${res.filename}`);
+      setTimeout(() => setBackupToast(null), 4000);
+    }
+  };
+
+  // Master List of Modules
+  const allNavItems = [
     { id: 'dashboard', label: 'Where Is My Money', icon: LayoutDashboard },
     { id: 'batches', label: 'Packing Batches', icon: Package },
     { id: 'inventory', label: 'Stock & Lots', icon: Boxes },
+    { id: 'pos', label: 'Purchase Orders (POs)', icon: FileText },
     { id: 'expenses', label: 'Expenses & Bills', icon: Wallet },
+    { id: 'interfirm_export', label: 'CFA Depot & Exports', icon: Truck },
     { id: 'advertising', label: 'Ads & E-Commerce', icon: Megaphone },
     { id: 'licences', label: 'Licences & Compliance', icon: ShieldCheck },
     { id: 'floor_mode', label: 'Factory Floor Mode', icon: QrCode, highlight: true },
@@ -65,31 +93,47 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     { id: 'backup', label: 'Backup & Tally Export', icon: Database },
   ];
 
-  // Mobile Bottom Tab Navigation items (for vertical phones)
+  // RBAC Filter: Only show modules the active role has permission to access!
+  const allowedModuleIds = ROLE_PERMISSIONS[activeRole]?.allowedModules || [];
+  const navItems = allNavItems.filter((item) => allowedModuleIds.includes(item.id));
+
+  // Mobile Bottom Tab Navigation items (dynamically filtered)
   const bottomTabs = [
     { id: 'dashboard', label: 'Money', icon: LayoutDashboard },
     { id: 'batches', label: 'Batches', icon: Package },
     { id: 'quick_add', label: 'Add', icon: PlusCircle, isAction: true },
     { id: 'inventory', label: 'Stock', icon: Boxes },
     { id: 'more', label: 'Menu', icon: Menu, isMenu: true },
-  ];
+  ].filter((tab) => tab.isAction || tab.isMenu || allowedModuleIds.includes(tab.id));
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 flex flex-col font-sans ${
-      isDark ? 'bg-slate-950 text-slate-100' : 'bg-[#FAF8F5] text-slate-900'
-    }`}>
+    <div
+      className={`min-h-screen transition-colors duration-200 flex flex-col font-sans ${
+        isDark ? 'bg-slate-950 text-slate-100' : 'bg-[#FAF8F5] text-slate-900'
+      }`}
+    >
+      {/* Backup Notification Toast */}
+      {backupToast && (
+        <div className="fixed top-3 right-4 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold shadow-2xl animate-bounce">
+          <Download className="w-4 h-4 flex-shrink-0" />
+          <span>{backupToast}</span>
+        </div>
+      )}
+
       {/* 1. Header Bar: Features the Adalaj Brand Emblem, Theme Toggle, Role Switcher & PWA Tools */}
-      <header className={`px-3 sm:px-5 py-2.5 flex items-center justify-between sticky top-0 z-30 select-none border-b transition-colors ${
-        isDark
-          ? 'bg-slate-900/95 border-slate-800/90 text-white'
-          : 'bg-white/95 border-amber-900/10 text-slate-900 shadow-sm'
-      }`}>
+      <header
+        className={`px-3 sm:px-5 py-2.5 flex items-center justify-between sticky top-0 z-30 select-none border-b transition-colors ${
+          isDark
+            ? 'bg-slate-900/95 border-slate-800/90 text-white'
+            : 'bg-white/95 border-amber-900/10 text-slate-900 shadow-sm'
+        }`}
+      >
         <div className="flex items-center gap-2 sm:gap-4">
           {/* Mobile Drawer Hamburger */}
           {(isPhonePortrait || isSquare) && (
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-2 rounded-lg transition-colors cursor-pointer ${
                 isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-700 hover:text-slate-950 hover:bg-slate-100'
               }`}
               aria-label="Toggle menu"
@@ -100,14 +144,16 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 
           {/* Adalaj Brand Logo */}
           <div
-            onClick={() => onSelectModule('dashboard')}
+            onClick={() => onSelectModule(allowedModuleIds[0] || 'dashboard')}
             className="flex items-center gap-2.5 cursor-pointer group"
           >
             <AdalajLogo variant={isPhonePortrait ? 'compact' : 'full'} height={isPhonePortrait ? 30 : 36} />
             <div className="hidden sm:block border-l pl-2.5 border-slate-700/40">
-              <span className={`text-[11px] font-bold tracking-wider uppercase block leading-none ${
-                isDark ? 'text-amber-400' : 'text-[#9A2229]'
-              }`}>
+              <span
+                className={`text-[11px] font-bold tracking-wider uppercase block leading-none ${
+                  isDark ? 'text-amber-400' : 'text-[#9A2229]'
+                }`}
+              >
                 Operations ERP
               </span>
               <span className="text-[10px] text-slate-400 block mt-0.5 font-medium">
@@ -117,12 +163,26 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           </div>
         </div>
 
-        {/* Right Header Controls: Theme Switcher, Role Switcher, Offline Sync & PWA Install */}
+        {/* Right Header Controls: Theme Switcher, Quick Backup, Role Selector, User Chip & Sign Out */}
         <div className="flex items-center gap-2">
+          {/* Quick Auto-Backup JSON Button */}
+          <button
+            onClick={handleQuickBackup}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all active:scale-95 cursor-pointer ${
+              isDark
+                ? 'bg-slate-800/80 border-slate-700 text-emerald-400 hover:bg-slate-700'
+                : 'bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100'
+            }`}
+            title="Download Instant Full Database Backup JSON"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span className="hidden xl:inline text-[11px]">Save Backup</span>
+          </button>
+
           {/* Light / Dark Mode Switcher */}
           <button
             onClick={toggleTheme}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all active:scale-95 ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all active:scale-95 cursor-pointer ${
               isDark
                 ? 'bg-slate-800/80 border-slate-700 text-amber-300 hover:bg-slate-700'
                 : 'bg-amber-50/80 border-amber-200/80 text-amber-900 hover:bg-amber-100'
@@ -143,23 +203,73 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             )}
           </button>
 
-          {/* User Role Selector */}
-          <div className={`hidden lg:flex items-center gap-1.5 border rounded-lg px-2.5 py-1 text-xs ${
-            isDark ? 'bg-slate-950/80 border-slate-800 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-800'
-          }`}>
-            <Shield className="w-3.5 h-3.5 text-[#9E1C23]" />
+          {/* User Role Selector (Allowed for Super Admin) */}
+          <div
+            className={`hidden lg:flex items-center gap-1.5 border rounded-lg px-2.5 py-1 text-xs ${
+              isDark ? 'bg-slate-950/80 border-slate-800 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-800'
+            }`}
+          >
+            <Shield className="w-3.5 h-3.5 text-[#9A2229]" />
             <select
               value={activeRole}
               onChange={(e) => handleRoleChange(e.target.value as UserRole)}
               className="bg-transparent font-medium text-xs focus:outline-none cursor-pointer"
             >
-              <option value="owner" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>Role: Owner (Full Access)</option>
-              <option value="accountant" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>Role: Accountant</option>
-              <option value="supervisor" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>Role: Floor Supervisor</option>
-              <option value="store_keeper" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>Role: Store Keeper</option>
-              <option value="ca_auditor" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>Role: CA / Auditor (Read-Only)</option>
+              <option value="owner" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>
+                Owner / Super Admin
+              </option>
+              <option value="accountant" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>
+                Finance & Accountant
+              </option>
+              <option value="supervisor" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>
+                Floor Supervisor
+              </option>
+              <option value="store_keeper" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>
+                Store Keeper
+              </option>
+              <option value="salesman" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>
+                Sales & CFA Dispatch
+              </option>
+              <option value="ca_auditor" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>
+                CA / Auditor (Read-Only)
+              </option>
             </select>
           </div>
+
+          {/* User Profile Chip */}
+          {currentUser && (
+            <div
+              className={`hidden sm:flex items-center gap-2 pl-2 pr-3 py-1 rounded-xl border text-xs ${
+                isDark ? 'bg-slate-900 border-slate-800 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-800'
+              }`}
+            >
+              <div className="w-6 h-6 rounded-full bg-[#9A2229] text-white flex items-center justify-center font-bold text-[10px]">
+                {currentUser.name.charAt(0)}
+              </div>
+              <div className="truncate max-w-[110px]">
+                <div className="font-semibold truncate text-[11px] leading-tight">
+                  {currentUser.name.split(' ')[0]}
+                </div>
+                <div className="text-[9px] text-slate-400 capitalize">
+                  {ROLE_PERMISSIONS[activeRole]?.name.split('/')[0]}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Sign Out Button */}
+          <button
+            onClick={onLogout}
+            className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg border text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+              isDark
+                ? 'bg-rose-500/10 border-rose-500/20 text-rose-400 hover:bg-rose-500/20'
+                : 'bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100'
+            }`}
+            title="Sign out of ERP workspace"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden md:inline text-[11px]">Sign Out</span>
+          </button>
 
           {/* Offline Sync Outbox Status */}
           <OfflineIndicator />
@@ -177,12 +287,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             className={`${
               isPhoneLandscape ? 'w-16' : isSquare ? 'w-52' : 'w-64'
             } border-r flex flex-col justify-between p-2 flex-shrink-0 select-none overflow-y-auto transition-colors ${
-              isDark
-                ? 'bg-slate-900/70 border-slate-800/80'
-                : 'bg-white border-amber-900/10'
+              isDark ? 'bg-slate-900/70 border-slate-800/80' : 'bg-white border-amber-900/10'
             }`}
           >
             <div className="space-y-1">
+              <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                Authorized Modules ({navItems.length})
+              </div>
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeModule === item.id;
@@ -191,9 +302,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                   <button
                     key={item.id}
                     onClick={() => onSelectModule(item.id)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all ${
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                       isActive
-                        ? 'bg-[#9E1C23] text-white font-bold shadow-sm'
+                        ? 'bg-[#9A2229] text-white font-bold shadow-sm'
                         : item.highlight
                         ? isDark
                           ? 'bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 border border-amber-500/30'
@@ -211,11 +322,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
               })}
             </div>
 
-            {/* Sidebar Bottom: Business Identification */}
+            {/* Sidebar Bottom: Business Identification & Active Role */}
             {!isPhoneLandscape && (
-              <div className={`mt-4 pt-3 border-t text-[11px] space-y-1 px-1.5 ${
-                isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-600'
-              }`}>
+              <div
+                className={`mt-4 pt-3 border-t text-[11px] space-y-1 px-1.5 ${
+                  isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-600'
+                }`}
+              >
                 <div className={`font-semibold truncate ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>
                   Adalaj Operations Base
                 </div>
@@ -224,14 +337,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                 </div>
                 <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5 pt-0.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>PWA Offline Cache Active</span>
+                  <span>RBAC Session: {ROLE_PERMISSIONS[activeRole]?.name.split('/')[0]}</span>
                 </div>
               </div>
             )}
           </aside>
         )}
 
-        {/* 3. Main Workspace Area: Pure Native Fluid Layout */}
+        {/* 3. Main Workspace Area */}
         <main className="flex-1 overflow-y-auto p-3.5 sm:p-5 md:p-6 pb-24 sm:pb-6">
           <div className="max-w-7xl mx-auto">{children}</div>
         </main>
@@ -239,9 +352,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 
       {/* 4. Native Vertical Phone Bottom Navigation */}
       {isPhonePortrait && (
-        <nav className={`fixed bottom-0 inset-x-0 z-40 px-2 py-1.5 flex items-center justify-around select-none border-t transition-colors shadow-2xl ${
-          isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
-        }`}>
+        <nav
+          className={`fixed bottom-0 inset-x-0 z-40 px-2 py-1.5 flex items-center justify-around select-none border-t transition-colors shadow-2xl ${
+            isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
+          }`}
+        >
           {bottomTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeModule === tab.id;
@@ -251,14 +366,16 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                 <button
                   key={tab.id}
                   onClick={onOpenQuickAdd}
-                  className="flex flex-col items-center justify-center -mt-6 active:scale-95 transition-transform"
+                  className="flex flex-col items-center justify-center -mt-6 active:scale-95 transition-transform cursor-pointer"
                 >
-                  <div className="w-13 h-13 rounded-full bg-[#9E1C23] text-white flex items-center justify-center shadow-lg border-2 border-white dark:border-slate-900">
+                  <div className="w-13 h-13 rounded-full bg-[#9A2229] text-white flex items-center justify-center shadow-lg border-2 border-white dark:border-slate-900">
                     <PlusCircle className="w-6 h-6" />
                   </div>
-                  <span className={`text-[10px] font-bold mt-0.5 ${
-                    isDark ? 'text-amber-400' : 'text-[#9E1C23]'
-                  }`}>
+                  <span
+                    className={`text-[10px] font-bold mt-0.5 ${
+                      isDark ? 'text-amber-400' : 'text-[#9A2229]'
+                    }`}
+                  >
                     Quick Add
                   </span>
                 </button>
@@ -270,7 +387,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                 <button
                   key={tab.id}
                   onClick={() => setMobileMenuOpen(true)}
-                  className={`flex flex-col items-center justify-center py-1 ${
+                  className={`flex flex-col items-center justify-center py-1 cursor-pointer ${
                     isDark ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-950'
                   }`}
                 >
@@ -284,11 +401,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
               <button
                 key={tab.id}
                 onClick={() => onSelectModule(tab.id)}
-                className={`flex flex-col items-center justify-center py-1 transition-colors ${
+                className={`flex flex-col items-center justify-center py-1 transition-colors cursor-pointer ${
                   isActive
                     ? isDark
                       ? 'text-[#F59E0B] font-bold'
-                      : 'text-[#9E1C23] font-bold'
+                      : 'text-[#9A2229] font-bold'
                     : isDark
                     ? 'text-slate-400 hover:text-white'
                     : 'text-slate-600 hover:text-slate-950'
@@ -305,30 +422,71 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       {/* 5. Mobile Slide-Over Drawer for remaining modules */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 flex bg-slate-950/80 backdrop-blur-sm">
-          <div className={`w-4/5 max-w-xs h-full p-4 flex flex-col justify-between border-r shadow-2xl overflow-y-auto ${
-            isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
-          }`}>
+          <div
+            className={`w-4/5 max-w-xs h-full p-4 flex flex-col justify-between border-r shadow-2xl overflow-y-auto ${
+              isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
+            }`}
+          >
             <div className="space-y-4">
-              <div className={`flex items-center justify-between pb-3 border-b ${
-                isDark ? 'border-slate-800' : 'border-slate-200'
-              }`}>
+              <div
+                className={`flex items-center justify-between pb-3 border-b ${
+                  isDark ? 'border-slate-800' : 'border-slate-200'
+                }`}
+              >
                 <AdalajLogo variant="full" height={32} />
                 <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`p-1.5 rounded-lg ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-950'}`}
+                  className={`p-1.5 rounded-lg cursor-pointer ${
+                    isDark ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-950'
+                  }`}
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
+              {/* User info in drawer */}
+              {currentUser && (
+                <div
+                  className={`p-2.5 rounded-xl border flex items-center justify-between text-xs ${
+                    isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+                  }`}
+                >
+                  <div>
+                    <div className="font-bold">{currentUser.name}</div>
+                    <div className="text-[10px] text-slate-400">{currentUser.email}</div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onLogout();
+                    }}
+                    className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10"
+                    title="Sign Out"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* Quick backup button in drawer */}
+              <button
+                onClick={handleQuickBackup}
+                className="w-full py-2 px-3 rounded-xl border text-xs font-bold text-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/30 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                <span>Save Database Backup JSON</span>
+              </button>
+
               {/* Theme toggle inside drawer */}
-              <div className={`p-2.5 rounded-lg border flex items-center justify-between ${
-                isDark ? 'bg-slate-950 border-slate-800 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-800'
-              }`}>
+              <div
+                className={`p-2.5 rounded-lg border flex items-center justify-between ${
+                  isDark ? 'bg-slate-950 border-slate-800 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-800'
+                }`}
+              >
                 <span className="text-xs font-semibold">Appearance Theme</span>
                 <button
                   onClick={toggleTheme}
-                  className={`px-3 py-1 rounded text-xs font-bold transition ${
+                  className={`px-3 py-1 rounded text-xs font-bold transition cursor-pointer ${
                     isDark ? 'bg-slate-800 text-amber-300' : 'bg-white shadow-sm text-slate-900'
                   }`}
                 >
@@ -337,23 +495,30 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
               </div>
 
               {/* Role Switcher in Drawer */}
-              <div className={`p-2.5 rounded-lg border text-xs ${
-                isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
-              }`}>
-                <span className={`text-[11px] block mb-1 font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                  Active Role
+              <div
+                className={`p-2.5 rounded-lg border text-xs ${
+                  isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+                }`}
+              >
+                <span
+                  className={`text-[11px] block mb-1 font-semibold ${
+                    isDark ? 'text-slate-400' : 'text-slate-600'
+                  }`}
+                >
+                  Active RBAC Role
                 </span>
                 <select
                   value={activeRole}
                   onChange={(e) => handleRoleChange(e.target.value as UserRole)}
-                  className={`w-full border rounded p-1.5 text-xs font-medium ${
+                  className={`w-full border rounded p-1.5 text-xs font-medium cursor-pointer ${
                     isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-900'
                   }`}
                 >
-                  <option value="owner">Owner (Full Access)</option>
-                  <option value="accountant">Accountant</option>
+                  <option value="owner">Owner / Super Admin</option>
+                  <option value="accountant">Finance & Accountant</option>
                   <option value="supervisor">Floor Supervisor</option>
                   <option value="store_keeper">Store Keeper</option>
+                  <option value="salesman">Sales & CFA Dispatch</option>
                   <option value="ca_auditor">CA / Auditor</option>
                 </select>
               </div>
@@ -371,9 +536,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                         onSelectModule(item.id);
                         setMobileMenuOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold ${
+                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold cursor-pointer ${
                         isActive
-                          ? 'bg-[#9E1C23] text-white font-bold'
+                          ? 'bg-[#9A2229] text-white font-bold'
                           : isDark
                           ? 'text-slate-300 hover:bg-slate-800'
                           : 'text-slate-700 hover:bg-slate-100'
@@ -390,9 +555,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
               </div>
             </div>
 
-            <div className={`pt-4 border-t text-xs space-y-2 ${
-              isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'
-            }`}>
+            <div
+              className={`pt-4 border-t text-xs space-y-2 ${
+                isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'
+              }`}
+            >
               <PWAInstallButton />
               <div className="text-[10px] opacity-75">
                 Adalaj Operations ERP · PWA Standalone

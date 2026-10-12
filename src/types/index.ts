@@ -346,3 +346,273 @@ export interface LicenceCompliance {
   notes?: string;
   history?: LicenceEvent[];
 }
+
+// User Authentication & RBAC Types
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  phone?: string;
+  department: string;
+  lastLoginAt?: string;
+}
+
+export const ROLE_PERMISSIONS: Record<
+  UserRole,
+  {
+    name: string;
+    description: string;
+    allowedModules: string[];
+    canWrite: boolean;
+  }
+> = {
+  owner: {
+    name: 'Super Admin / Owner',
+    description: 'Full administrative access across all plant, operational, and financial modules',
+    allowedModules: [
+      'dashboard',
+      'batches',
+      'inventory',
+      'pos',
+      'expenses',
+      'interfirm_export',
+      'advertising',
+      'licences',
+      'floor_mode',
+      'payroll',
+      'debt',
+      'machines',
+      'backup',
+    ],
+    canWrite: true,
+  },
+  accountant: {
+    name: 'Chief Accountant & Finance',
+    description: 'Access to Expenses, Bills, POs, GST ITC, Part-payments, Payroll, Debt, Licences, and Tally Export',
+    allowedModules: [
+      'dashboard',
+      'pos',
+      'expenses',
+      'interfirm_export',
+      'payroll',
+      'debt',
+      'advertising',
+      'licences',
+      'backup',
+    ],
+    canWrite: true,
+  },
+  supervisor: {
+    name: 'Plant & Production Supervisor',
+    description: 'Production batches, floor kiosk mode, machine maintenance, and stock issue tracking',
+    allowedModules: [
+      'batches',
+      'floor_mode',
+      'inventory',
+      'machines',
+      'interfirm_export',
+    ],
+    canWrite: true,
+  },
+  store_keeper: {
+    name: 'Store & Warehouse Keeper',
+    description: 'Stock lots, PO material receipts/GRN, and delivery challans to CFA Depot',
+    allowedModules: [
+      'inventory',
+      'pos',
+      'batches',
+      'interfirm_export',
+      'machines',
+    ],
+    canWrite: true,
+  },
+  salesman: {
+    name: 'Sales & Dispatch Manager',
+    description: 'Finished goods dispatch, CFA Depot transfers, Export shipments, Ads and E-commerce',
+    allowedModules: [
+      'dashboard',
+      'interfirm_export',
+      'advertising',
+      'inventory',
+      'licences',
+    ],
+    canWrite: true,
+  },
+  ca_auditor: {
+    name: 'Statutory CA / Auditor (Read-Only)',
+    description: 'Read-only audit view for books, GST claimable vs blocked ITC, tax ledgers, and compliance',
+    allowedModules: [
+      'dashboard',
+      'pos',
+      'expenses',
+      'interfirm_export',
+      'licences',
+      'debt',
+      'backup',
+    ],
+    canWrite: false,
+  },
+};
+
+// Purchase Orders (POs) & Fulfillment Engine Types
+export type PurchaseCategory =
+  | 'raw_material'         // Bulk whole spices, haldi, mirchi, dhana, jeera
+  | 'packing_material'     // Printed 3-layer pouches, roll film reels, cartons, labels
+  | 'machinery'            // Augers, band sealers, nitrogen flushers, capex equipment
+  | 'rent'                 // Factory shed & warehouse rent
+  | 'electricity'          // Torrent Power / UGVCL bills (meter units, demand)
+  | 'ca_legal'             // CA retainers, statutory auditor fees, legal
+  | 'stationery'           // Ribbons, barcode labels, strapping tapes, lab bags
+  | 'licences'             // Regulatory renewal fees & challans
+  | 'other_services';
+
+export type POFulfillmentStatus =
+  | 'draft'
+  | 'issued'
+  | 'partially_fulfilled'
+  | 'fulfilled'
+  | 'cancelled';
+
+export type PaymentMilestoneType =
+  | 'advance'              // Token / advance paid before work/dispatch
+  | 'part_payment'         // Partial instalment on loading/delivery
+  | 'final_settlement';    // Final clearance after acceptance
+
+export interface POPartPayment {
+  id: string;
+  poId: string;
+  date: string;
+  milestoneType: PaymentMilestoneType;
+  amountPaise: number;
+  paymentMode: 'bank_neft_rtgs' | 'upi' | 'cheque' | 'cash';
+  accountId: string;
+  accountName: string;
+  utrOrRef: string;
+  notes?: string;
+}
+
+export interface POItemLine {
+  id: string;
+  description: string;
+  category: PurchaseCategory;
+  hsnOrSac: string;
+  qty: number;
+  unit: string;
+  unitPricePaise: number;
+  taxableAmountPaise: number;
+  gstRatePct: number; // 0, 5, 12, 18, 28
+  cgstPaise: number;
+  sgstPaise: number;
+  igstPaise: number;
+  totalPaise: number;
+  isClaimableITC: boolean; // Claimable GST input credit vs blocked 17(5)
+  isRCM: boolean;          // Reverse charge mechanism
+}
+
+export interface PurchaseOrder {
+  id: string;
+  poNumber: string;               // e.g. PO-2026-10-001
+  initiationDate: string;         // Date of PO Initiation
+  expectedFulfillmentDate: string;// Expected Delivery / Due Date
+  actualFulfillmentDate?: string; // Date of Actual Fulfillment
+  partyId: string;
+  partyName: string;
+  partyGstin?: string;
+  purchaseCategory: PurchaseCategory;
+  status: POFulfillmentStatus;
+  
+  // Financials in integer paise
+  taxableAmountPaise: number;
+  cgstPaise: number;
+  sgstPaise: number;
+  igstPaise: number;
+  totalAmountPaise: number;       // Gross total
+  
+  // GST ITC classification
+  totalClaimableGstPaise: number;
+  totalIneligibleGstPaise: number;
+  
+  // Advance & Part Payments
+  advancePaidPaise: number;
+  totalPaidPaise: number;
+  balanceDuePaise: number;
+  payments: POPartPayment[];
+  
+  // Line items
+  items: POItemLine[];
+  
+  // Delivery & fulfillment logs
+  fulfillmentNotes?: string;
+  grnNumber?: string;
+  billId?: string;
+}
+
+// Inter-Firm Finished Goods Transfers to Sister Concern / CFA Depot Types
+export type TransferStatus = 'dispatched' | 'in_transit' | 'received_at_cfa' | 'cancelled';
+export type TransferFormat = 'bulk_sacks' | 'retail_pouches' | 'mixed_assorted';
+
+export interface InterFirmTransferItem {
+  itemId: string;
+  sku: string;
+  name: string;
+  packSizeGrams: number;
+  batchId?: string;
+  batchNumber: string;
+  packsCount: number;
+  boxesCount: number;
+  totalGrams: number;
+  ratePerKgPaise: number;
+  totalValuationPaise: number;
+}
+
+export interface InterFirmTransfer {
+  id: string;
+  transferChallanNo: string;      // Delivery Challan under GST Rule 55
+  date: string;
+  destinationFirmName: string;     // e.g. "Adalaj Foods Distribution & CFA Depot"
+  destinationGstin: string;
+  destinationAddress: string;
+  vehicleNo: string;
+  ewayBillNo?: string;
+  driverPhone?: string;
+  format: TransferFormat;
+  items: InterFirmTransferItem[];
+  totalGrams: number;
+  totalValuationPaise: number;
+  status: TransferStatus;
+  receivedAtDate?: string;
+  receivedByNotes?: string;
+  remarks?: string;
+}
+
+// Export Licences & Shipments Types
+export type ExportFormat = 'bulk_export' | 'retail_pack_export';
+export type ExportShipmentStatus = 'booking' | 'customs_cleared' | 'loaded_on_vessel' | 'dispatched_in_transit' | 'delivered';
+
+export interface ExportShipment {
+  id: string;
+  exportInvoiceNo: string;
+  shippingBillNo: string;
+  date: string;
+  consigneeName: string;
+  destinationCountry: string;
+  destinationPort: string;
+  portOfLoading: string;           // e.g. "Mundra Port, Gujarat (INMUN1)"
+  lutNumber: string;               // Letter of Undertaking under GST Rule 96A
+  iecNumber: string;               // Import Export Code
+  apedaRcmcNo?: string;            // APEDA Registration-cum-Membership Certificate
+  spicesBoardRegNo?: string;       // Spices Board India CRES
+  exportFormat: ExportFormat;
+  containerNo: string;
+  sealNo: string;
+  totalWeightKg: number;
+  foreignCurrency: 'USD' | 'AED' | 'EUR' | 'GBP';
+  foreignAmountCents: number;      // e.g. 1250000 = $12,500.00
+  inrRealizedPaise: number;        // integer paise
+  status: ExportShipmentStatus;
+  blOrAwbNumber?: string;
+  blDate?: string;
+  notes?: string;
+}
+

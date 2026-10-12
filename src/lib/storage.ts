@@ -18,6 +18,13 @@ import {
   MarketplaceSettlement,
   LicenceCompliance,
   LicenceEvent,
+  AuthUser,
+  PurchaseOrder,
+  POFulfillmentStatus,
+  POPartPayment,
+  InterFirmTransfer,
+  TransferStatus,
+  ExportShipment,
 } from '../types';
 
 const STORAGE_KEYS = {
@@ -39,6 +46,10 @@ const STORAGE_KEYS = {
   LICENCES: 'packing_ops_licences_v1',
   OUTBOX: 'packing_ops_outbox_v1',
   ACTIVE_ROLE: 'packing_ops_role_v1',
+  AUTH_USER: 'adalaj_auth_user_v1',
+  PURCHASE_ORDERS: 'adalaj_purchase_orders_v1',
+  INTERFIRM_TRANSFERS: 'adalaj_interfirm_transfers_v1',
+  EXPORT_SHIPMENTS: 'adalaj_export_shipments_v1',
 };
 
 // Initial Seed Data
@@ -1146,6 +1157,698 @@ const initialLicences: LicenceCompliance[] = [
   },
 ];
 
+export interface SystemUserCredential {
+  email: string;
+  password: string;
+  user: AuthUser;
+}
+
+export const PREDEFINED_USERS: SystemUserCredential[] = [
+  {
+    email: 'admin@adalajfoods.com',
+    password: 'Admin@2026',
+    user: {
+      id: 'usr_admin_01',
+      email: 'admin@adalajfoods.com',
+      name: 'Mohammed Shaikh (Director & Super Admin)',
+      role: 'owner',
+      phone: '+91 98250 99991',
+      department: 'Executive Management & Operations',
+      lastLoginAt: '2026-10-12T18:00:00.000Z',
+    },
+  },
+  {
+    email: 'accountant@adalajfoods.com',
+    password: 'Accounts@2026',
+    user: {
+      id: 'usr_acc_01',
+      email: 'accountant@adalajfoods.com',
+      name: 'Ramesh Patel (Head of Finance & Tax)',
+      role: 'accountant',
+      phone: '+91 98250 99992',
+      department: 'Finance & Taxation',
+      lastLoginAt: '2026-10-12T17:30:00.000Z',
+    },
+  },
+  {
+    email: 'supervisor@adalajfoods.com',
+    password: 'Plant@2026',
+    user: {
+      id: 'usr_sup_01',
+      email: 'supervisor@adalajfoods.com',
+      name: 'Pravin Solanki (Plant Supervisor)',
+      role: 'supervisor',
+      phone: '+91 98250 99993',
+      department: 'Production Floor & Packing Ops',
+      lastLoginAt: '2026-10-12T17:15:00.000Z',
+    },
+  },
+  {
+    email: 'store@adalajfoods.com',
+    password: 'Store@2026',
+    user: {
+      id: 'usr_str_01',
+      email: 'store@adalajfoods.com',
+      name: 'Vikram Desai (Store & Warehouse In-Charge)',
+      role: 'store_keeper',
+      phone: '+91 98250 99994',
+      department: 'Inventory & Materials Receiving',
+      lastLoginAt: '2026-10-12T16:45:00.000Z',
+    },
+  },
+  {
+    email: 'sales@adalajfoods.com',
+    password: 'Sales@2026',
+    user: {
+      id: 'usr_sls_01',
+      email: 'sales@adalajfoods.com',
+      name: 'Hitesh Shah (Dispatch & CFA Coordinator)',
+      role: 'salesman',
+      phone: '+91 98250 99995',
+      department: 'Sales, CFA Depot & Exports',
+      lastLoginAt: '2026-10-12T16:00:00.000Z',
+    },
+  },
+  {
+    email: 'auditor@adalajfoods.com',
+    password: 'Audit@2026',
+    user: {
+      id: 'usr_aud_01',
+      email: 'auditor@adalajfoods.com',
+      name: 'CA Bhavin Trivedi (Statutory Auditor)',
+      role: 'ca_auditor',
+      phone: '+91 98250 99996',
+      department: 'Statutory Audit & GST Compliance',
+      lastLoginAt: '2026-10-12T15:30:00.000Z',
+    },
+  },
+];
+
+const initialPurchaseOrders: PurchaseOrder[] = [
+  {
+    id: 'po_machinery_01',
+    poNumber: 'PO-2026-09-001',
+    initiationDate: '2026-09-25',
+    expectedFulfillmentDate: '2026-10-25',
+    partyId: 'pty_mach_rajkot',
+    partyName: 'Rajkot Packmach Systems Pvt Ltd',
+    partyGstin: '24AAJCR9921K1Z8',
+    purchaseCategory: 'machinery',
+    status: 'partially_fulfilled',
+    taxableAmountPaise: 48000000, // ₹4,80,000
+    cgstPaise: 4320000,          // 9% CGST = ₹43,200
+    sgstPaise: 4320000,          // 9% SGST = ₹43,200
+    igstPaise: 0,
+    totalAmountPaise: 56640000,  // ₹5,66,400
+    totalClaimableGstPaise: 8640000, // ₹86,400 full ITC claimable on plant machinery
+    totalIneligibleGstPaise: 0,
+    advancePaidPaise: 15000000,  // ₹1,50,000 booking advance
+    totalPaidPaise: 35000000,    // ₹3,50,000 total paid so far
+    balanceDuePaise: 21640000,   // ₹2,16,400 remaining due on factory commissioning
+    payments: [
+      {
+        id: 'pay_po_01_adv',
+        poId: 'po_machinery_01',
+        date: '2026-09-25',
+        milestoneType: 'advance',
+        amountPaise: 15000000,
+        paymentMode: 'bank_neft_rtgs',
+        accountId: 'acc_hdfc_curr',
+        accountName: 'HDFC Current A/c - 50200012345678',
+        utrOrRef: 'HDFC0925819024',
+        notes: '26.5% Advance token on placing machinery fabrication order',
+      },
+      {
+        id: 'pay_po_01_part',
+        poId: 'po_machinery_01',
+        date: '2026-10-04',
+        milestoneType: 'part_payment',
+        amountPaise: 20000000,
+        paymentMode: 'bank_neft_rtgs',
+        accountId: 'acc_hdfc_curr',
+        accountName: 'HDFC Current A/c - 50200012345678',
+        utrOrRef: 'HDFC1004910283',
+        notes: 'Part-payment on factory pre-dispatch inspection approval at Rajkot plant',
+      },
+    ],
+    items: [
+      {
+        id: 'poi_01',
+        description: 'Automatic High-Speed Auger Form-Fill-Seal Pouch Packing Machine with Nitrogen Flush Kit',
+        category: 'machinery',
+        hsnOrSac: '84223000',
+        qty: 1,
+        unit: 'unit',
+        unitPricePaise: 48000000,
+        taxableAmountPaise: 48000000,
+        gstRatePct: 18,
+        cgstPaise: 4320000,
+        sgstPaise: 4320000,
+        igstPaise: 0,
+        totalPaise: 56640000,
+        isClaimableITC: true,
+        isRCM: false,
+      },
+    ],
+    fulfillmentNotes: 'Machine fabricated & tested at vendor premises. Dispatched via transporter; balance ₹2,16,400 payable after erection and trial pouch sealing run.',
+    grnNumber: 'GRN-MCH-2026-004',
+  },
+  {
+    id: 'po_raw_01',
+    poNumber: 'PO-2026-10-002',
+    initiationDate: '2026-10-01',
+    expectedFulfillmentDate: '2026-10-15',
+    actualFulfillmentDate: '2026-10-08',
+    partyId: 'pty_sup_01',
+    partyName: 'Patel Agro Spices (APMC Unjha)',
+    partyGstin: '24AABCP4412K1Z6',
+    purchaseCategory: 'raw_material',
+    status: 'partially_fulfilled',
+    taxableAmountPaise: 42500000, // ₹4,25,000
+    cgstPaise: 1062500,          // 2.5% = ₹10,625
+    sgstPaise: 1062500,          // 2.5% = ₹10,625
+    igstPaise: 0,
+    totalAmountPaise: 44625000,  // ₹4,46,250
+    totalClaimableGstPaise: 2125000,
+    totalIneligibleGstPaise: 0,
+    advancePaidPaise: 15000000,  // ₹1,50,000 advance
+    totalPaidPaise: 15000000,
+    balanceDuePaise: 29625000,   // ₹2,96,250 balance due after lab moisture check
+    payments: [
+      {
+        id: 'pay_po_02_adv',
+        poId: 'po_raw_01',
+        date: '2026-10-01',
+        milestoneType: 'advance',
+        amountPaise: 15000000,
+        paymentMode: 'bank_neft_rtgs',
+        accountId: 'acc_hdfc_curr',
+        accountName: 'HDFC Current A/c - 50200012345678',
+        utrOrRef: 'HDFC1001849102',
+        notes: 'Advance booking payment against APMC Unjha auction lot loading',
+      },
+    ],
+    items: [
+      {
+        id: 'poi_02',
+        description: 'Rajapuri Pure Turmeric Bulbs (APMC Certified Lot, Moisture < 9.5%)',
+        category: 'raw_material',
+        hsnOrSac: '09103020',
+        qty: 5000,
+        unit: 'kg',
+        unitPricePaise: 8500, // ₹85/kg
+        taxableAmountPaise: 42500000,
+        gstRatePct: 5,
+        cgstPaise: 1062500,
+        sgstPaise: 1062500,
+        igstPaise: 0,
+        totalPaise: 44625000,
+        isClaimableITC: true,
+        isRCM: false,
+      },
+    ],
+    fulfillmentNotes: 'Lot unloaded in Adalaj warehouse quarantine bay. Moisture test passing (9.1%). Balance payment queued for CA approval.',
+    grnNumber: 'GRN-RAW-2026-102',
+  },
+  {
+    id: 'po_packing_01',
+    poNumber: 'PO-2026-10-003',
+    initiationDate: '2026-10-02',
+    expectedFulfillmentDate: '2026-10-22',
+    partyId: 'pty_pack_flexi',
+    partyName: 'Apex Flexipack Pvt Ltd (Sanand)',
+    partyGstin: '24AAJCA4912L1Z9',
+    purchaseCategory: 'packing_material',
+    status: 'issued',
+    taxableAmountPaise: 24000000, // ₹2,40,000
+    cgstPaise: 2160000,          // 9% = ₹21,600
+    sgstPaise: 2160000,          // 9% = ₹21,600
+    igstPaise: 0,
+    totalAmountPaise: 28320000,  // ₹2,83,200
+    totalClaimableGstPaise: 4320000,
+    totalIneligibleGstPaise: 0,
+    advancePaidPaise: 5000000,   // ₹50,000 advance
+    totalPaidPaise: 5000000,
+    balanceDuePaise: 23320000,   // ₹2,33,200 due on batch delivery
+    payments: [
+      {
+        id: 'pay_po_03_adv',
+        poId: 'po_packing_01',
+        date: '2026-10-02',
+        milestoneType: 'advance',
+        amountPaise: 5000000,
+        paymentMode: 'bank_neft_rtgs',
+        accountId: 'acc_hdfc_curr',
+        accountName: 'HDFC Current A/c - 50200012345678',
+        utrOrRef: 'HDFC1002998124',
+        notes: 'Rotogravure cylinder prepress & film extrusion advance',
+      },
+    ],
+    items: [
+      {
+        id: 'poi_03',
+        description: 'Printed 3-Layer Metalized Barrier Pouches (100g Haldi & 250g Mirchi)',
+        category: 'packing_material',
+        hsnOrSac: '39232100',
+        qty: 200000,
+        unit: 'pcs',
+        unitPricePaise: 120, // ₹1.20/pc
+        taxableAmountPaise: 24000000,
+        gstRatePct: 18,
+        cgstPaise: 2160000,
+        sgstPaise: 2160000,
+        igstPaise: 0,
+        totalPaise: 28320000,
+        isClaimableITC: true,
+        isRCM: false,
+      },
+    ],
+    fulfillmentNotes: 'Cylinders engraved, printing scheduled for 18th Oct at Sanand unit.',
+  },
+  {
+    id: 'po_rent_01',
+    poNumber: 'PO-2026-10-004',
+    initiationDate: '2026-10-01',
+    expectedFulfillmentDate: '2026-10-05',
+    actualFulfillmentDate: '2026-10-05',
+    partyId: 'pty_rent_sarkhej',
+    partyName: 'Sarkhej Industrial Estates Ltd',
+    partyGstin: '24AAJCS1920M1Z2',
+    purchaseCategory: 'rent',
+    status: 'fulfilled',
+    taxableAmountPaise: 6500000, // ₹65,000
+    cgstPaise: 585000,          // ₹5,850
+    sgstPaise: 585000,          // ₹5,850
+    igstPaise: 0,
+    totalAmountPaise: 7670000,  // ₹76,700
+    totalClaimableGstPaise: 1170000, // ₹11,700 100% claimable ITC
+    totalIneligibleGstPaise: 0,
+    advancePaidPaise: 0,
+    totalPaidPaise: 7670000,
+    balanceDuePaise: 0,
+    payments: [
+      {
+        id: 'pay_po_rent_01',
+        poId: 'po_rent_01',
+        date: '2026-10-05',
+        milestoneType: 'final_settlement',
+        amountPaise: 7670000,
+        paymentMode: 'bank_neft_rtgs',
+        accountId: 'acc_hdfc_curr',
+        accountName: 'HDFC Current A/c - 50200012345678',
+        utrOrRef: 'HDFC1005881920',
+        notes: 'Monthly shed lease for Adalaj packaging facility & spice storage bay',
+      },
+    ],
+    items: [
+      {
+        id: 'poi_04',
+        description: 'Factory Shed & Packaging Facility Rental (Month of Oct 2026)',
+        category: 'rent',
+        hsnOrSac: '997212',
+        qty: 1,
+        unit: 'month',
+        unitPricePaise: 6500000,
+        taxableAmountPaise: 6500000,
+        gstRatePct: 18,
+        cgstPaise: 585000,
+        sgstPaise: 585000,
+        igstPaise: 0,
+        totalPaise: 7670000,
+        isClaimableITC: true,
+        isRCM: false,
+      },
+    ],
+    fulfillmentNotes: 'Commercial rent voucher posted; tax invoice received.',
+  },
+  {
+    id: 'po_elec_01',
+    poNumber: 'PO-2026-10-005',
+    initiationDate: '2026-10-03',
+    expectedFulfillmentDate: '2026-10-08',
+    actualFulfillmentDate: '2026-10-07',
+    partyId: 'pty_elec_torrent',
+    partyName: 'Torrent Power Limited (Adalaj Feeder)',
+    partyGstin: '24AAACT2727Q1ZT',
+    purchaseCategory: 'electricity',
+    status: 'fulfilled',
+    taxableAmountPaise: 3840000, // ₹38,400
+    cgstPaise: 0,
+    sgstPaise: 0,
+    igstPaise: 0,
+    totalAmountPaise: 3840000,  // ₹38,400 (Electricity is GST exempt in India)
+    totalClaimableGstPaise: 0,
+    totalIneligibleGstPaise: 0,
+    advancePaidPaise: 0,
+    totalPaidPaise: 3840000,
+    balanceDuePaise: 0,
+    payments: [
+      {
+        id: 'pay_po_elec_01',
+        poId: 'po_elec_01',
+        date: '2026-10-07',
+        milestoneType: 'final_settlement',
+        amountPaise: 3840000,
+        paymentMode: 'bank_neft_rtgs',
+        accountId: 'acc_hdfc_curr',
+        accountName: 'HDFC Current A/c - 50200012345678',
+        utrOrRef: 'HDFC1007449102',
+        notes: 'Monthly power tariff (Consumer #849102941, 4,820 Units consumed)',
+      },
+    ],
+    items: [
+      {
+        id: 'poi_05',
+        description: 'HT Industrial Power Bill - 4,820 Units @ ₹7.20/unit + Fixed Demand Charges',
+        category: 'electricity',
+        hsnOrSac: '996911',
+        qty: 4820,
+        unit: 'kwh',
+        unitPricePaise: 720,
+        taxableAmountPaise: 3840000,
+        gstRatePct: 0,
+        cgstPaise: 0,
+        sgstPaise: 0,
+        igstPaise: 0,
+        totalPaise: 3840000,
+        isClaimableITC: false,
+        isRCM: false,
+      },
+    ],
+    fulfillmentNotes: 'Power bill cleared before due date; meter readings verified with plant supervisor log.',
+  },
+  {
+    id: 'po_ca_01',
+    poNumber: 'PO-2026-10-006',
+    initiationDate: '2026-10-01',
+    expectedFulfillmentDate: '2026-10-10',
+    actualFulfillmentDate: '2026-10-09',
+    partyId: 'pty_ca_trivedi',
+    partyName: 'Bhavin Trivedi & Associates (CAs)',
+    partyGstin: '24AAQPB8412E1Z1',
+    purchaseCategory: 'ca_legal',
+    status: 'fulfilled',
+    taxableAmountPaise: 2500000, // ₹25,000
+    cgstPaise: 225000,          // 9% = ₹2,250
+    sgstPaise: 225000,          // 9% = ₹2,250
+    igstPaise: 0,
+    totalAmountPaise: 2950000,  // ₹29,500
+    totalClaimableGstPaise: 450000, // ₹4,500 100% claimable business service ITC
+    totalIneligibleGstPaise: 0,
+    advancePaidPaise: 0,
+    totalPaidPaise: 2950000,
+    balanceDuePaise: 0,
+    payments: [
+      {
+        id: 'pay_po_ca_01',
+        poId: 'po_ca_01',
+        date: '2026-10-09',
+        milestoneType: 'final_settlement',
+        amountPaise: 2950000,
+        paymentMode: 'bank_neft_rtgs',
+        accountId: 'acc_hdfc_curr',
+        accountName: 'HDFC Current A/c - 50200012345678',
+        utrOrRef: 'HDFC1009849201',
+        notes: 'Monthly retainer for GSTR-1, GSTR-3B, TDS compliance & internal stock audit',
+      },
+    ],
+    items: [
+      {
+        id: 'poi_06',
+        description: 'Monthly Retainer for Statutory Accounting, GST Audit & Tax Compliance (Oct 2026)',
+        category: 'ca_legal',
+        hsnOrSac: '998222',
+        qty: 1,
+        unit: 'month',
+        unitPricePaise: 2500000,
+        taxableAmountPaise: 2500000,
+        gstRatePct: 18,
+        cgstPaise: 225000,
+        sgstPaise: 225000,
+        igstPaise: 0,
+        totalPaise: 2950000,
+        isClaimableITC: true,
+        isRCM: false,
+      },
+    ],
+    fulfillmentNotes: 'Tax invoice received and ITC verified on GSTR-2B preview portal.',
+  },
+  {
+    id: 'po_stat_01',
+    poNumber: 'PO-2026-10-007',
+    initiationDate: '2026-10-04',
+    expectedFulfillmentDate: '2026-10-12',
+    actualFulfillmentDate: '2026-10-11',
+    partyId: 'pty_stat_guj',
+    partyName: 'Gujarat Barcode & Packaging Consumables',
+    partyGstin: '24AAJCG9182P1Z5',
+    purchaseCategory: 'stationery',
+    status: 'fulfilled',
+    taxableAmountPaise: 1850000, // ₹18,500
+    cgstPaise: 166500,          // 9% = ₹1,665
+    sgstPaise: 166500,          // 9% = ₹1,665
+    igstPaise: 0,
+    totalAmountPaise: 2183000,  // ₹21,830
+    totalClaimableGstPaise: 333000,
+    totalIneligibleGstPaise: 0,
+    advancePaidPaise: 0,
+    totalPaidPaise: 2183000,
+    balanceDuePaise: 0,
+    payments: [
+      {
+        id: 'pay_po_stat_01',
+        poId: 'po_stat_01',
+        date: '2026-10-11',
+        milestoneType: 'final_settlement',
+        amountPaise: 2183000,
+        paymentMode: 'bank_neft_rtgs',
+        accountId: 'acc_hdfc_curr',
+        accountName: 'HDFC Current A/c - 50200012345678',
+        utrOrRef: 'HDFC1011928410',
+        notes: 'Thermal barcode transfer ribbons (50 rolls) & BOPP sealing rolls (100 rolls)',
+      },
+    ],
+    items: [
+      {
+        id: 'poi_07',
+        description: 'Wax-Resin Thermal Transfer Ribbons (110mm x 300m) & BOPP Industrial Sealing Tapes',
+        category: 'stationery',
+        hsnOrSac: '96121000',
+        qty: 150,
+        unit: 'rolls',
+        unitPricePaise: 12333,
+        taxableAmountPaise: 1850000,
+        gstRatePct: 18,
+        cgstPaise: 166500,
+        sgstPaise: 166500,
+        igstPaise: 0,
+        totalPaise: 2183000,
+        isClaimableITC: true,
+        isRCM: false,
+      },
+    ],
+    fulfillmentNotes: 'Store room receipt acknowledged by Vikram Desai.',
+  },
+  {
+    id: 'po_lic_01',
+    poNumber: 'PO-2026-10-008',
+    initiationDate: '2026-10-05',
+    expectedFulfillmentDate: '2026-10-10',
+    actualFulfillmentDate: '2026-10-09',
+    partyId: 'pty_fssai_gov',
+    partyName: 'Food Safety and Standards Authority of India (FoSCoS Portal)',
+    partyGstin: '07AAAGF0123L1Z4',
+    purchaseCategory: 'licences',
+    status: 'fulfilled',
+    taxableAmountPaise: 1500000, // ₹15,000
+    cgstPaise: 0,
+    sgstPaise: 0,
+    igstPaise: 0,
+    totalAmountPaise: 1500000,  // ₹15,000 statutory government fee (exempt from GST)
+    totalClaimableGstPaise: 0,
+    totalIneligibleGstPaise: 0,
+    advancePaidPaise: 0,
+    totalPaidPaise: 1500000,
+    balanceDuePaise: 0,
+    payments: [
+      {
+        id: 'pay_po_lic_01',
+        poId: 'po_lic_01',
+        date: '2026-10-09',
+        milestoneType: 'final_settlement',
+        amountPaise: 1500000,
+        paymentMode: 'bank_neft_rtgs',
+        accountId: 'acc_hdfc_curr',
+        accountName: 'HDFC Current A/c - 50200012345678',
+        utrOrRef: 'FOSCOS-CHALLAN-2026-9921',
+        notes: 'FSSAI Central Manufacturer Licence renewal portal challan payment',
+      },
+    ],
+    items: [
+      {
+        id: 'poi_08',
+        description: 'FSSAI Central Manufacturing Licence Renewal Fee for 2026-2027 (Capacity > 2 MT/day)',
+        category: 'licences',
+        hsnOrSac: '999112',
+        qty: 1,
+        unit: 'year',
+        unitPricePaise: 1500000,
+        taxableAmountPaise: 1500000,
+        gstRatePct: 0,
+        cgstPaise: 0,
+        sgstPaise: 0,
+        igstPaise: 0,
+        totalPaise: 1500000,
+        isClaimableITC: false,
+        isRCM: false,
+      },
+    ],
+    fulfillmentNotes: 'FoSCoS acknowledgement slip generated; licence renewed for 1 year.',
+  },
+];
+
+const initialInterFirmTransfers: InterFirmTransfer[] = [
+  {
+    id: 'ift_cfa_001',
+    transferChallanNo: 'DC-2026-10-001',
+    date: '2026-10-10',
+    destinationFirmName: 'Adalaj Foods Distribution & CFA Depot',
+    destinationGstin: '24AAGCS9412F2Z1',
+    destinationAddress: 'Plot 14-B, Sardar Patel Ring Road Logistics Park, Aslali, Ahmedabad 382427',
+    vehicleNo: 'GJ-01-ET-8492',
+    ewayBillNo: '241893829104',
+    driverPhone: '+91 98980 23145',
+    format: 'mixed_assorted',
+    items: [
+      {
+        itemId: 'item_haldi_100g',
+        sku: 'FG-HLD-100G',
+        name: 'Turmeric Powder (Haldi) 100g Consumer Pouch',
+        packSizeGrams: 100,
+        batchNumber: 'BAT-2026-10-01',
+        packsCount: 1200,
+        boxesCount: 20,
+        totalGrams: 120000,
+        ratePerKgPaise: 40000, // ₹400/kg valuation
+        totalValuationPaise: 4800000, // ₹48,000
+      },
+      {
+        itemId: 'item_mirchi_250g',
+        sku: 'FG-MRC-250G',
+        name: 'Red Chilli Powder (Mirchi) 250g Consumer Pouch',
+        packSizeGrams: 250,
+        batchNumber: 'BAT-2026-10-02',
+        packsCount: 800,
+        boxesCount: 16,
+        totalGrams: 200000,
+        ratePerKgPaise: 48000, // ₹480/kg valuation
+        totalValuationPaise: 9600000, // ₹96,000
+      },
+      {
+        itemId: 'item_raw_hld',
+        sku: 'RAW-HLD-01',
+        name: 'Pure Ground Turmeric Powder (25kg Bulk Master Sack)',
+        packSizeGrams: 25000,
+        batchNumber: 'BAT-2026-10-01',
+        packsCount: 8,
+        boxesCount: 8,
+        totalGrams: 200000,
+        ratePerKgPaise: 37000, // ₹370/kg valuation
+        totalValuationPaise: 7400000, // ₹74,000
+      },
+    ],
+    totalGrams: 520000, // 520 kg
+    totalValuationPaise: 21800000, // ₹2,18,000
+    status: 'received_at_cfa',
+    receivedAtDate: '2026-10-10',
+    receivedByNotes: 'Received in sound condition at CFA Depot Bay #3; physical carton counts verified.',
+    remarks: 'Inter-firm stock transfer to sister distribution company under GST Rule 55 Delivery Challan.',
+  },
+  {
+    id: 'ift_cfa_002',
+    transferChallanNo: 'DC-2026-10-002',
+    date: '2026-10-12',
+    destinationFirmName: 'Adalaj Foods Distribution & CFA Depot',
+    destinationGstin: '24AAGCS9412F2Z1',
+    destinationAddress: 'Plot 14-B, Sardar Patel Ring Road Logistics Park, Aslali, Ahmedabad 382427',
+    vehicleNo: 'GJ-18-AZ-4410',
+    ewayBillNo: '241893829188',
+    driverPhone: '+91 97120 44521',
+    format: 'bulk_sacks',
+    items: [
+      {
+        itemId: 'item_coriander_bulk',
+        sku: 'RAW-DHN-25KG',
+        name: 'Dhaniya (Coriander) Powder (25kg Bulk Commercial Sack)',
+        packSizeGrams: 25000,
+        batchNumber: 'BAT-2026-10-03',
+        packsCount: 20,
+        boxesCount: 20,
+        totalGrams: 500000,
+        ratePerKgPaise: 33000, // ₹330/kg
+        totalValuationPaise: 16500000, // ₹1,65,000
+      },
+    ],
+    totalGrams: 500000, // 500 kg
+    totalValuationPaise: 16500000, // ₹1,65,000
+    status: 'in_transit',
+    remarks: 'Commercial bulk stock transfer en-route to Aslali CFA Depot for onward wholesale deliveries.',
+  },
+];
+
+const initialExportShipments: ExportShipment[] = [
+  {
+    id: 'exp_ship_001',
+    exportInvoiceNo: 'EXP-2026-001',
+    shippingBillNo: 'SB-7489211/2026',
+    date: '2026-09-28',
+    consigneeName: 'Al-Madina Spice Trading LLC, Al-Ras, Deira, Dubai, UAE',
+    destinationCountry: 'United Arab Emirates',
+    destinationPort: 'Jebel Ali Port (AEJEA)',
+    portOfLoading: 'Mundra Port, Gujarat (INMUN1)',
+    lutNumber: 'AD240326001928K',
+    iecNumber: '0819034291',
+    apedaRcmcNo: 'APEDA/GUJ/2024/991',
+    spicesBoardRegNo: 'CRES/SPICES/ADL/009',
+    exportFormat: 'bulk_export',
+    containerNo: 'MSKU-781920-4 (20ft FCL)',
+    sealNo: 'IN-MUN-99218',
+    totalWeightKg: 20000, // 20 MT
+    foreignCurrency: 'USD',
+    foreignAmountCents: 2850000, // $28,500.00
+    inrRealizedPaise: 237975000, // ₹23,79,750 (at ₹83.50/$)
+    status: 'loaded_on_vessel',
+    blOrAwbNumber: 'MAEU98218491',
+    blDate: '2026-10-02',
+    notes: 'Bulk food-grade big bags (1 MT jumbo bags x 20) with phytosanitary and Spices Board analytical certificate.',
+  },
+  {
+    id: 'exp_ship_002',
+    exportInvoiceNo: 'EXP-2026-002',
+    shippingBillNo: 'SB-8912301/2026',
+    date: '2026-10-08',
+    consigneeName: 'Patel Brothers Import & Distribution Inc, Hanover, NJ, USA',
+    destinationCountry: 'United States of America',
+    destinationPort: 'Port of New York / Newark (USNYC)',
+    portOfLoading: 'Mundra Port, Gujarat (INMUN1)',
+    lutNumber: 'AD240326001928K',
+    iecNumber: '0819034291',
+    apedaRcmcNo: 'APEDA/GUJ/2024/991',
+    spicesBoardRegNo: 'CRES/SPICES/ADL/009',
+    exportFormat: 'retail_pack_export',
+    containerNo: 'HLXU-491028-1 (40ft HQ)',
+    sealNo: 'IN-MUN-10294',
+    totalWeightKg: 12500, // 12.5 MT
+    foreignCurrency: 'USD',
+    foreignAmountCents: 1820000, // $18,200.00
+    inrRealizedPaise: 151970000, // ₹15,19,700
+    status: 'customs_cleared',
+    blOrAwbNumber: 'HLCU94819204',
+    blDate: '2026-10-10',
+    notes: 'Retail packaged spices (100g & 250g consumer pouches packed in 5-ply corrugated shippers with US FDA compliant nutritional labelling).',
+  },
+];
+
 // In-Memory & LocalStorage wrapper
 class StorageEngine {
   private get<T>(key: string, fallback: T): T {
@@ -1617,6 +2320,171 @@ class StorageEngine {
     this.logOutbox('update', 'asset', `Renewed Licence ${id}`);
   }
 
+  // Authentication & RBAC Session
+  getAuthUser(): AuthUser | null {
+    return this.get<AuthUser | null>(STORAGE_KEYS.AUTH_USER, PREDEFINED_USERS[0].user);
+  }
+
+  setAuthUser(user: AuthUser | null): void {
+    this.set(STORAGE_KEYS.AUTH_USER, user);
+    if (user) {
+      this.setActiveRole(user.role);
+    }
+  }
+
+  login(email: string, pass: string): { success: boolean; user?: AuthUser; message?: string } {
+    const trimmedEmail = email.trim().toLowerCase();
+    const cred = PREDEFINED_USERS.find(
+      (c) => c.email.toLowerCase() === trimmedEmail && c.password === pass.trim()
+    );
+
+    if (cred) {
+      const updatedUser: AuthUser = {
+        ...cred.user,
+        lastLoginAt: new Date().toISOString(),
+      };
+      this.setAuthUser(updatedUser);
+      return { success: true, user: updatedUser };
+    }
+
+    return {
+      success: false,
+      message: 'Invalid credentials. Please verify your email and password.',
+    };
+  }
+
+  logout(): void {
+    this.set(STORAGE_KEYS.AUTH_USER, null);
+  }
+
+  // Purchase Orders & Fulfillment
+  getPurchaseOrders(): PurchaseOrder[] {
+    return this.get<PurchaseOrder[]>(STORAGE_KEYS.PURCHASE_ORDERS, initialPurchaseOrders);
+  }
+
+  savePurchaseOrders(pos: PurchaseOrder[]): void {
+    this.set(STORAGE_KEYS.PURCHASE_ORDERS, pos);
+  }
+
+  addPurchaseOrder(po: PurchaseOrder): void {
+    const list = this.getPurchaseOrders();
+    this.set(STORAGE_KEYS.PURCHASE_ORDERS, [po, ...list]);
+    this.logOutbox('create', 'bill', `Created PO ${po.poNumber} for ${po.partyName}`);
+  }
+
+  updatePurchaseOrder(po: PurchaseOrder): void {
+    const list = this.getPurchaseOrders().map((p) => (p.id === po.id ? po : p));
+    this.set(STORAGE_KEYS.PURCHASE_ORDERS, list);
+    this.logOutbox('update', 'bill', `Updated PO ${po.poNumber}`);
+  }
+
+  addPOPartPayment(poId: string, payment: POPartPayment): void {
+    const pos = this.getPurchaseOrders().map((po) => {
+      if (po.id === poId) {
+        const existingPayments = po.payments || [];
+        const updatedPayments = [...existingPayments, payment];
+        const totalPaid = updatedPayments.reduce((acc, p) => acc + p.amountPaise, 0);
+        const advancePaid = updatedPayments
+          .filter((p) => p.milestoneType === 'advance')
+          .reduce((acc, p) => acc + p.amountPaise, 0);
+        const balanceDue = Math.max(0, po.totalAmountPaise - totalPaid);
+
+        return {
+          ...po,
+          payments: updatedPayments,
+          totalPaidPaise: totalPaid,
+          advancePaidPaise: advancePaid,
+          balanceDuePaise: balanceDue,
+          status:
+            balanceDue === 0 && po.status !== 'cancelled'
+              ? ('fulfilled' as const)
+              : totalPaid > 0
+              ? ('partially_fulfilled' as const)
+              : po.status,
+        };
+      }
+      return po;
+    });
+
+    this.savePurchaseOrders(pos);
+    this.logOutbox('create', 'transaction', `Recorded ${payment.milestoneType} payment on PO ${poId}`);
+  }
+
+  updatePOFulfillmentStatus(
+    poId: string,
+    status: POFulfillmentStatus,
+    notes?: string,
+    grn?: string
+  ): void {
+    const pos = this.getPurchaseOrders().map((po) => {
+      if (po.id === poId) {
+        return {
+          ...po,
+          status,
+          actualFulfillmentDate:
+            status === 'fulfilled' ? new Date().toISOString().split('T')[0] : po.actualFulfillmentDate,
+          fulfillmentNotes: notes || po.fulfillmentNotes,
+          grnNumber: grn || po.grnNumber,
+        };
+      }
+      return po;
+    });
+    this.savePurchaseOrders(pos);
+    this.logOutbox('update', 'bill', `Updated PO fulfillment status ${poId} to ${status}`);
+  }
+
+  // Inter-Firm Finished Goods Transfers (CFA Depot)
+  getInterFirmTransfers(): InterFirmTransfer[] {
+    return this.get<InterFirmTransfer[]>(STORAGE_KEYS.INTERFIRM_TRANSFERS, initialInterFirmTransfers);
+  }
+
+  saveInterFirmTransfers(transfers: InterFirmTransfer[]): void {
+    this.set(STORAGE_KEYS.INTERFIRM_TRANSFERS, transfers);
+  }
+
+  addInterFirmTransfer(transfer: InterFirmTransfer): void {
+    const list = this.getInterFirmTransfers();
+    this.set(STORAGE_KEYS.INTERFIRM_TRANSFERS, [transfer, ...list]);
+    this.logOutbox('create', 'movement', `Dispatched Delivery Challan ${transfer.transferChallanNo} to ${transfer.destinationFirmName}`);
+  }
+
+  updateTransferStatus(id: string, status: TransferStatus, notes?: string): void {
+    const list = this.getInterFirmTransfers().map((t) => {
+      if (t.id === id) {
+        return {
+          ...t,
+          status,
+          receivedAtDate: status === 'received_at_cfa' ? new Date().toISOString().split('T')[0] : t.receivedAtDate,
+          receivedByNotes: notes || t.receivedByNotes,
+        };
+      }
+      return t;
+    });
+    this.saveInterFirmTransfers(list);
+    this.logOutbox('update', 'movement', `Updated Transfer Challan ${id} to ${status}`);
+  }
+
+  // Export Shipments & Licences
+  getExportShipments(): ExportShipment[] {
+    return this.get<ExportShipment[]>(STORAGE_KEYS.EXPORT_SHIPMENTS, initialExportShipments);
+  }
+
+  saveExportShipments(shipments: ExportShipment[]): void {
+    this.set(STORAGE_KEYS.EXPORT_SHIPMENTS, shipments);
+  }
+
+  addExportShipment(shipment: ExportShipment): void {
+    const list = this.getExportShipments();
+    this.set(STORAGE_KEYS.EXPORT_SHIPMENTS, [shipment, ...list]);
+    this.logOutbox('create', 'movement', `Logged Export Shipment ${shipment.exportInvoiceNo} to ${shipment.destinationCountry}`);
+  }
+
+  updateExportShipment(shipment: ExportShipment): void {
+    const list = this.getExportShipments().map((s) => (s.id === shipment.id ? shipment : s));
+    this.saveExportShipments(list);
+    this.logOutbox('update', 'movement', `Updated Export Shipment ${shipment.exportInvoiceNo}`);
+  }
+
   // Reset to initial starter template
   resetStarterTemplate(): void {
     this.set(STORAGE_KEYS.ENTITY, initialEntity);
@@ -1635,6 +2503,9 @@ class StorageEngine {
     this.set(STORAGE_KEYS.CAMPAIGNS, initialCampaigns);
     this.set(STORAGE_KEYS.SETTLEMENTS, initialSettlements);
     this.set(STORAGE_KEYS.LICENCES, initialLicences);
+    this.set(STORAGE_KEYS.PURCHASE_ORDERS, initialPurchaseOrders);
+    this.set(STORAGE_KEYS.INTERFIRM_TRANSFERS, initialInterFirmTransfers);
+    this.set(STORAGE_KEYS.EXPORT_SHIPMENTS, initialExportShipments);
     this.set(STORAGE_KEYS.OUTBOX, []);
   }
 
@@ -1658,8 +2529,11 @@ class StorageEngine {
         campaigns: this.getCampaigns(),
         settlements: this.getSettlements(),
         licences: this.getLicences(),
+        purchaseOrders: this.getPurchaseOrders(),
+        interFirmTransfers: this.getInterFirmTransfers(),
+        exportShipments: this.getExportShipments(),
         exportedAt: new Date().toISOString(),
-        version: '1.1.0',
+        version: '1.2.0',
       },
       null,
       2
@@ -1687,6 +2561,9 @@ class StorageEngine {
         if (data.campaigns) this.set(STORAGE_KEYS.CAMPAIGNS, data.campaigns);
         if (data.settlements) this.set(STORAGE_KEYS.SETTLEMENTS, data.settlements);
         if (data.licences) this.set(STORAGE_KEYS.LICENCES, data.licences);
+        if (data.purchaseOrders) this.set(STORAGE_KEYS.PURCHASE_ORDERS, data.purchaseOrders);
+        if (data.interFirmTransfers) this.set(STORAGE_KEYS.INTERFIRM_TRANSFERS, data.interFirmTransfers);
+        if (data.exportShipments) this.set(STORAGE_KEYS.EXPORT_SHIPMENTS, data.exportShipments);
         return true;
       }
       return false;
