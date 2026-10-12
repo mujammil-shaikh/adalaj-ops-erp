@@ -14,6 +14,10 @@ import {
   Loan,
   OutboxItem,
   UserRole,
+  AdvertisingCampaign,
+  MarketplaceSettlement,
+  LicenceCompliance,
+  LicenceEvent,
 } from '../types';
 
 const STORAGE_KEYS = {
@@ -30,6 +34,9 @@ const STORAGE_KEYS = {
   ASSETS: 'packing_ops_assets_v1',
   EMPLOYEES: 'packing_ops_employees_v1',
   LOANS: 'packing_ops_loans_v1',
+  CAMPAIGNS: 'packing_ops_campaigns_v1',
+  SETTLEMENTS: 'packing_ops_settlements_v1',
+  LICENCES: 'packing_ops_licences_v1',
   OUTBOX: 'packing_ops_outbox_v1',
   ACTIVE_ROLE: 'packing_ops_role_v1',
 };
@@ -837,6 +844,308 @@ const initialLoans: Loan[] = [
   },
 ];
 
+const initialCampaigns: AdvertisingCampaign[] = [
+  {
+    id: 'camp_01',
+    name: 'Diwali Festive Spice Box Meta Campaign',
+    platform: 'meta_ads',
+    status: 'active',
+    startDate: '2026-10-01',
+    endDate: '2026-11-05',
+    budgetPaise: 4500000, // ₹45,000
+    actualSpendPaise: 3250000, // ₹32,500
+    gstPaise: 585000, // ₹5,850 (18% IGST)
+    productLine: 'line_a',
+    targetSkuCode: 'FG-HLD-100G',
+    attributionChannel: 'Instagram & Facebook Reels',
+    impressions: 145000,
+    clicks: 4200,
+    conversions: 380,
+    roas: 4.2,
+    vendorName: 'Meta Platforms Ireland / India',
+    notes: 'Promoting 100g/200g gift packs for festive gifting across Gujarat & Mumbai.',
+  },
+  {
+    id: 'camp_02',
+    name: 'Amazon Sponsored Products - Cumin & Turmeric 100g/200g',
+    platform: 'amazon_ads',
+    status: 'active',
+    startDate: '2026-09-15',
+    budgetPaise: 2500000, // ₹25,000
+    actualSpendPaise: 1840000, // ₹18,400
+    gstPaise: 331200, // ₹3,312
+    productLine: 'line_a',
+    targetSkuCode: 'FG-JRA-100G',
+    attributionChannel: 'Amazon Search Keyword Ads',
+    impressions: 88000,
+    clicks: 2950,
+    conversions: 410,
+    roas: 3.8,
+    vendorName: 'Amazon Seller Services Pvt Ltd',
+    notes: 'Exact match bids on "Adalaj Cumin" and "Pure Jeera powder".',
+  },
+  {
+    id: 'camp_03',
+    name: 'Blinkit Quick-Commerce Premium Slot Placement',
+    platform: 'blinkit_zepto',
+    status: 'active',
+    startDate: '2026-10-05',
+    budgetPaise: 1500000, // ₹15,000
+    actualSpendPaise: 1120000, // ₹11,200
+    gstPaise: 201600, // ₹2,016
+    productLine: 'line_a',
+    targetSkuCode: 'FG-MRC-100G',
+    attributionChannel: 'Blinkit Instant Delivery Hub Ahmedabad',
+    impressions: 52000,
+    clicks: 1850,
+    conversions: 320,
+    roas: 5.1,
+    vendorName: 'Blinkit Commerce Pvt Ltd',
+    notes: 'Top-of-search banner for grocery searches in Gandhinagar & SG Highway.',
+  },
+  {
+    id: 'camp_04',
+    name: 'Gujarat Agro Food Expo Exhibition Stall',
+    platform: 'trade_fair',
+    status: 'completed',
+    startDate: '2026-09-10',
+    endDate: '2026-09-14',
+    budgetPaise: 7500000, // ₹75,000
+    actualSpendPaise: 7200000, // ₹72,000
+    gstPaise: 1296000, // ₹12,960
+    productLine: 'shared',
+    attributionChannel: 'Helipad Exhibition Ground Gandhinagar',
+    conversions: 85,
+    vendorName: 'Gujarat Agro Exhibitions Ltd',
+    notes: 'Sample distribution of ₹10 sachets and wholesale booking for 1kg/2kg silver packs.',
+  },
+  {
+    id: 'camp_05',
+    name: 'New Printed Pouch Packaging Artwork & Retainer',
+    platform: 'creative_production',
+    status: 'completed',
+    startDate: '2026-08-20',
+    endDate: '2026-09-05',
+    budgetPaise: 3500000, // ₹35,000
+    actualSpendPaise: 3500000, // ₹35,000
+    gstPaise: 630000, // ₹6,300
+    productLine: 'line_a',
+    attributionChannel: 'Creative Studio Retainer',
+    vendorName: 'Heritage Design & Studio Ahmedabad',
+    notes: 'High-res food photography, nutrition table typography, and cylinder printing artwork preparation.',
+  },
+];
+
+const initialSettlements: MarketplaceSettlement[] = [
+  {
+    id: 'set_amz_01',
+    marketplace: 'amazon',
+    statementPeriod: '2026-09-16 to 2026-09-30',
+    orderCount: 480,
+    grossSalesPaise: 14850000, // ₹1,48,500
+    referralFeesPaise: 1782000, // ₹17,820 (12%)
+    closingFeesPaise: 520000, // ₹5,200
+    fulfillmentFeesPaise: 1450000, // ₹14,500 (FBA)
+    shippingFeesPaise: 1120000, // ₹11,200
+    returnsRtoPaise: 640000, // ₹6,400
+    adsDeductionPaise: 1200000, // ₹12,000
+    gstOnFeesPaise: 912960, // ₹9,129.60 (18% on fees)
+    tcsPaise: 148500, // ₹1,485 (1% TCS)
+    netBankPayoutPaise: 7076540, // ₹70,765.40
+    bankCreditDate: '2026-10-04',
+    status: 'reconciled',
+    linkedAccountName: 'HDFC Current A/c (Adalaj Branch - 50200088)',
+  },
+  {
+    id: 'set_blk_01',
+    marketplace: 'blinkit',
+    statementPeriod: '2026-10-01 to 2026-10-10',
+    orderCount: 310,
+    grossSalesPaise: 9200000, // ₹92,000
+    referralFeesPaise: 920000,
+    closingFeesPaise: 310000,
+    fulfillmentFeesPaise: 840000,
+    shippingFeesPaise: 420000,
+    returnsRtoPaise: 120000,
+    adsDeductionPaise: 250000,
+    gstOnFeesPaise: 514800,
+    tcsPaise: 92000,
+    netBankPayoutPaise: 5723200, // ₹57,232
+    bankCreditDate: '2026-10-11',
+    status: 'reconciled',
+    linkedAccountName: 'HDFC Current A/c (Adalaj Branch - 50200088)',
+  },
+  {
+    id: 'set_zep_01',
+    marketplace: 'zepto',
+    statementPeriod: '2026-10-05 to 2026-10-12',
+    orderCount: 165,
+    grossSalesPaise: 4500000, // ₹45,000
+    referralFeesPaise: 450000,
+    closingFeesPaise: 165000,
+    fulfillmentFeesPaise: 420000,
+    shippingFeesPaise: 210000,
+    returnsRtoPaise: 90000,
+    adsDeductionPaise: 0,
+    gstOnFeesPaise: 224100,
+    tcsPaise: 45000,
+    netBankPayoutPaise: 2895900, // ₹28,959
+    bankCreditDate: '2026-10-15',
+    status: 'pending',
+    linkedAccountName: 'HDFC Current A/c (Adalaj Branch - 50200088)',
+  },
+];
+
+const initialLicences: LicenceCompliance[] = [
+  {
+    id: 'lic_fssai',
+    name: 'FSSAI State Manufacturing License',
+    category: 'fssai',
+    registrationNo: '10722026000412',
+    issuingAuthority: 'Food & Drugs Control Administration (FDCA), Gujarat',
+    issueDate: '2022-08-15',
+    expiryDate: '2027-08-14',
+    renewalCadence: '5_year',
+    status: 'active',
+    annualCostPaise: 750000, // ₹7,500
+    penaltyPaise: 0,
+    responsiblePerson: 'Rajesh Patel (Plant Head)',
+    documentRef: 'FSSAI_Licence_Adalaj_2027.pdf',
+    notes: 'Mandatory on all primary spice pouches and retail carton packaging.',
+    history: [
+      { date: '2022-08-15', action: 'Initial 5-year Grant', feePaise: 750000, reference: 'FDCA-GR-2022-99' },
+    ],
+  },
+  {
+    id: 'lic_gst',
+    name: 'GSTIN Registration Certificate (Form REG-06)',
+    category: 'gst',
+    registrationNo: '24AAGCS9412F1Z4',
+    issuingAuthority: 'State Tax Department, Gandhinagar Division, Gujarat',
+    issueDate: '2021-04-01',
+    expiryDate: '2099-12-31',
+    renewalCadence: 'permanent',
+    status: 'active',
+    annualCostPaise: 0,
+    penaltyPaise: 0,
+    responsiblePerson: 'Accountant (Mahesh Shah)',
+    documentRef: 'GST_REG06_Adalaj.pdf',
+    notes: 'Jurisdiction: Circle 4, Gandhinagar Ward 2.',
+  },
+  {
+    id: 'lic_lm',
+    name: 'Legal Metrology Packaged Commodities Registration',
+    category: 'weights_measures',
+    registrationNo: 'LM/GUJ/PK/2026/0892',
+    issuingAuthority: 'Department of Consumer Affairs & Legal Metrology, Gujarat',
+    issueDate: '2023-04-01',
+    expiryDate: '2028-03-31',
+    renewalCadence: '5_year',
+    status: 'active',
+    annualCostPaise: 500000, // ₹5,000
+    penaltyPaise: 0,
+    responsiblePerson: 'Rajesh Patel (Plant Head)',
+    documentRef: 'Legal_Metrology_Cert_2028.pdf',
+    notes: 'Registration of Manufacturer/Packer under Rule 27 of Legal Metrology Rules, 2011.',
+  },
+  {
+    id: 'lic_udyam',
+    name: 'Udyam MSME Registration Certificate',
+    category: 'udyam',
+    registrationNo: 'UDYAM-GJ-01-0084921',
+    issuingAuthority: 'Ministry of Micro, Small and Medium Enterprises, Govt of India',
+    issueDate: '2021-06-18',
+    expiryDate: '2099-12-31',
+    renewalCadence: 'permanent',
+    status: 'active',
+    annualCostPaise: 0,
+    penaltyPaise: 0,
+    responsiblePerson: 'Owner',
+    documentRef: 'Udyam_MSME_Adalaj.pdf',
+    notes: 'Micro Manufacturing Enterprise classification for spice processing and packing.',
+  },
+  {
+    id: 'lic_tm',
+    name: 'Trademark Registration - ADALAJ (Class 30)',
+    category: 'trademark',
+    registrationNo: 'TM-5829104',
+    issuingAuthority: 'Trade Marks Registry, Ahmedabad, Govt of India',
+    issueDate: '2024-02-19',
+    expiryDate: '2034-02-18',
+    renewalCadence: '10_year',
+    status: 'active',
+    annualCostPaise: 900000, // ₹9,000
+    penaltyPaise: 0,
+    responsiblePerson: 'Owner',
+    documentRef: 'Trademark_Certificate_Class30.pdf',
+    notes: 'Registered wordmark and crest for Spices, Condiments, Seasonings, Curry Powders.',
+  },
+  {
+    id: 'lic_gpcb',
+    name: 'Gujarat Pollution Control Board (GPCB Consent)',
+    category: 'pollution_control',
+    registrationNo: 'GPCB/CCA/GNR-1492',
+    issuingAuthority: 'Gujarat Pollution Control Board, Sector 10A Gandhinagar',
+    issueDate: '2022-12-01',
+    expiryDate: '2027-11-30',
+    renewalCadence: '5_year',
+    status: 'active',
+    annualCostPaise: 1200000, // ₹12,000
+    penaltyPaise: 0,
+    responsiblePerson: 'Operations Lead',
+    documentRef: 'GPCB_Consent_Order_2027.pdf',
+    notes: 'Green Category dry powder handling and packaging unit.',
+  },
+  {
+    id: 'lic_gs1',
+    name: 'GS1 India Barcode Prefix (EAN-13 Barcodes)',
+    category: 'gs1_barcode',
+    registrationNo: '8906148291',
+    issuingAuthority: 'GS1 India, New Delhi',
+    issueDate: '2025-11-16',
+    expiryDate: '2026-11-15',
+    renewalCadence: 'annual',
+    status: 'expiring_soon',
+    annualCostPaise: 1500000, // ₹15,000
+    penaltyPaise: 0,
+    responsiblePerson: 'Operations Lead',
+    documentRef: 'GS1_Barcode_Allocation_2026.pdf',
+    notes: 'Allocates standard retail 13-digit barcodes for 50g, 100g, 200g, 500g, 1kg, 2kg, 5kg SKUs.',
+  },
+  {
+    id: 'lic_fact',
+    name: 'Gujarat Factories Inspectorate Registration',
+    category: 'factory_permit',
+    registrationNo: 'FAC/GNR/2026/331',
+    issuingAuthority: 'Directorate of Industrial Safety & Health (DISH), Gujarat',
+    issueDate: '2026-01-01',
+    expiryDate: '2026-12-31',
+    renewalCadence: 'annual',
+    status: 'active',
+    annualCostPaise: 1000000, // ₹10,000
+    penaltyPaise: 0,
+    responsiblePerson: 'Rajesh Patel (Plant Head)',
+    documentRef: 'DISH_Factory_License_2026.pdf',
+    notes: 'Factory permit for food packing machinery and vertical sealing units.',
+  },
+  {
+    id: 'lic_nabl',
+    name: 'NABL Spice Purity, Moisture & Aflatoxin Lab Report',
+    category: 'lab_test',
+    registrationNo: 'NABL/LAB/SP-9481',
+    issuingAuthority: 'EnviroCare Labs (NABL ISO/IEC 17025 Accredited)',
+    issueDate: '2026-04-15',
+    expiryDate: '2026-10-30',
+    renewalCadence: 'quarterly',
+    status: 'expiring_soon',
+    annualCostPaise: 850000, // ₹8,500
+    penaltyPaise: 0,
+    responsiblePerson: 'Geeta Solanki (QC)',
+    documentRef: 'NABL_Lab_Report_Q3_2026.pdf',
+    notes: 'Periodic pesticide residue and moisture compliance test for APMC bulk spice lots.',
+  },
+];
+
 // In-Memory & LocalStorage wrapper
 class StorageEngine {
   private get<T>(key: string, fallback: T): T {
@@ -1216,6 +1525,98 @@ class StorageEngine {
     this.set(STORAGE_KEYS.OUTBOX, updated);
   }
 
+  // Advertising Campaigns (Section 13.3)
+  getCampaigns(): AdvertisingCampaign[] {
+    return this.get<AdvertisingCampaign[]>(STORAGE_KEYS.CAMPAIGNS, initialCampaigns);
+  }
+
+  saveCampaigns(campaigns: AdvertisingCampaign[]): void {
+    this.set(STORAGE_KEYS.CAMPAIGNS, campaigns);
+  }
+
+  addCampaign(campaign: AdvertisingCampaign): void {
+    const list = this.getCampaigns();
+    this.set(STORAGE_KEYS.CAMPAIGNS, [campaign, ...list]);
+    this.logOutbox('create', 'transaction', `Added Campaign ${campaign.name} (${campaign.platform})`);
+  }
+
+  updateCampaign(campaign: AdvertisingCampaign): void {
+    const list = this.getCampaigns().map((c) => (c.id === campaign.id ? campaign : c));
+    this.set(STORAGE_KEYS.CAMPAIGNS, list);
+    this.logOutbox('update', 'transaction', `Updated Campaign ${campaign.name}`);
+  }
+
+  deleteCampaign(id: string): void {
+    const list = this.getCampaigns().filter((c) => c.id !== id);
+    this.set(STORAGE_KEYS.CAMPAIGNS, list);
+    this.logOutbox('void', 'transaction', `Archived Campaign ${id}`);
+  }
+
+  // Marketplace Settlements (Section 13.3)
+  getSettlements(): MarketplaceSettlement[] {
+    return this.get<MarketplaceSettlement[]>(STORAGE_KEYS.SETTLEMENTS, initialSettlements);
+  }
+
+  saveSettlements(settlements: MarketplaceSettlement[]): void {
+    this.set(STORAGE_KEYS.SETTLEMENTS, settlements);
+  }
+
+  addSettlement(settlement: MarketplaceSettlement): void {
+    const list = this.getSettlements();
+    this.set(STORAGE_KEYS.SETTLEMENTS, [settlement, ...list]);
+    this.logOutbox('create', 'transaction', `Reconciled Settlement ${settlement.marketplace} ${settlement.statementPeriod}`);
+  }
+
+  // Licences & Compliance Vault (Section 13.4)
+  getLicences(): LicenceCompliance[] {
+    return this.get<LicenceCompliance[]>(STORAGE_KEYS.LICENCES, initialLicences);
+  }
+
+  saveLicences(licences: LicenceCompliance[]): void {
+    this.set(STORAGE_KEYS.LICENCES, licences);
+  }
+
+  addLicence(licence: LicenceCompliance): void {
+    const list = this.getLicences();
+    this.set(STORAGE_KEYS.LICENCES, [licence, ...list]);
+    this.logOutbox('create', 'asset', `Added Licence ${licence.name} (${licence.registrationNo})`);
+  }
+
+  updateLicence(licence: LicenceCompliance): void {
+    const list = this.getLicences().map((l) => (l.id === licence.id ? licence : l));
+    this.set(STORAGE_KEYS.LICENCES, list);
+    this.logOutbox('update', 'asset', `Updated Licence ${licence.name}`);
+  }
+
+  deleteLicence(id: string): void {
+    const list = this.getLicences().filter((l) => l.id !== id);
+    this.set(STORAGE_KEYS.LICENCES, list);
+    this.logOutbox('void', 'asset', `Archived Licence ${id}`);
+  }
+
+  recordLicenceRenewal(id: string, feePaise: number, notes: string): void {
+    const list = this.getLicences().map((l) => {
+      if (l.id === id) {
+        const history = l.history || [];
+        const newEvent: LicenceEvent = {
+          date: new Date().toISOString().split('T')[0],
+          action: 'Renewed',
+          feePaise,
+          reference: notes || 'Standard renewal cycle',
+        };
+        return {
+          ...l,
+          status: 'active' as const,
+          lastRenewalDate: newEvent.date,
+          history: [newEvent, ...history],
+        };
+      }
+      return l;
+    });
+    this.set(STORAGE_KEYS.LICENCES, list);
+    this.logOutbox('update', 'asset', `Renewed Licence ${id}`);
+  }
+
   // Reset to initial starter template
   resetStarterTemplate(): void {
     this.set(STORAGE_KEYS.ENTITY, initialEntity);
@@ -1231,6 +1632,9 @@ class StorageEngine {
     this.set(STORAGE_KEYS.ASSETS, initialAssets);
     this.set(STORAGE_KEYS.EMPLOYEES, initialEmployees);
     this.set(STORAGE_KEYS.LOANS, initialLoans);
+    this.set(STORAGE_KEYS.CAMPAIGNS, initialCampaigns);
+    this.set(STORAGE_KEYS.SETTLEMENTS, initialSettlements);
+    this.set(STORAGE_KEYS.LICENCES, initialLicences);
     this.set(STORAGE_KEYS.OUTBOX, []);
   }
 
@@ -1251,8 +1655,11 @@ class StorageEngine {
         assets: this.getAssets(),
         employees: this.getEmployees(),
         loans: this.getLoans(),
+        campaigns: this.getCampaigns(),
+        settlements: this.getSettlements(),
+        licences: this.getLicences(),
         exportedAt: new Date().toISOString(),
-        version: '1.0.0',
+        version: '1.1.0',
       },
       null,
       2
@@ -1277,6 +1684,9 @@ class StorageEngine {
         if (data.assets) this.set(STORAGE_KEYS.ASSETS, data.assets);
         if (data.employees) this.set(STORAGE_KEYS.EMPLOYEES, data.employees);
         if (data.loans) this.set(STORAGE_KEYS.LOANS, data.loans);
+        if (data.campaigns) this.set(STORAGE_KEYS.CAMPAIGNS, data.campaigns);
+        if (data.settlements) this.set(STORAGE_KEYS.SETTLEMENTS, data.settlements);
+        if (data.licences) this.set(STORAGE_KEYS.LICENCES, data.licences);
         return true;
       }
       return false;

@@ -14,6 +14,9 @@ export function formatINR(paise: number, showDecimals = false): string {
   return `${isNegative ? '-' : ''}₹${formatted}`;
 }
 
+export const formatCurrency = formatINR;
+export const formatPaiseToRupees = formatINR;
+
 /**
  * Formats weight in grams into human readable (g or kg)
  */

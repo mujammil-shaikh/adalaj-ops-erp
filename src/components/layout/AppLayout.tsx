@@ -14,6 +14,8 @@ import {
   X,
   ChevronRight,
   Shield,
+  ShieldCheck,
+  Megaphone,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -54,6 +56,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     { id: 'batches', label: 'Packing Batches', icon: Package },
     { id: 'inventory', label: 'Stock & Lots', icon: Boxes },
     { id: 'expenses', label: 'Expenses & Bills', icon: Wallet },
+    { id: 'advertising', label: 'Ads & E-Commerce', icon: Megaphone },
+    { id: 'licences', label: 'Licences & Compliance', icon: ShieldCheck },
     { id: 'floor_mode', label: 'Factory Floor Mode', icon: QrCode, highlight: true },
     { id: 'payroll', label: 'Payroll & Wages', icon: Users },
     { id: 'debt', label: 'Loans & EMI', icon: Landmark },

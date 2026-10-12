@@ -254,3 +254,95 @@ export interface OutboxItem {
   payloadSummary: string;
   synced: boolean;
 }
+
+// Section 13.3 Advertising, Marketing & E-Commerce Types
+export type AdPlatform =
+  | 'meta_ads'
+  | 'google_ads'
+  | 'amazon_ads'
+  | 'blinkit_zepto'
+  | 'creative_production'
+  | 'offline_marketing'
+  | 'influencer'
+  | 'trade_fair';
+
+export interface AdvertisingCampaign {
+  id: string;
+  name: string;
+  platform: AdPlatform;
+  status: 'active' | 'completed' | 'draft' | 'paused';
+  startDate: string;
+  endDate?: string;
+  budgetPaise: number;
+  actualSpendPaise: number;
+  gstPaise: number;
+  productLine: 'line_a' | 'line_b' | 'shared';
+  targetSkuCode?: string;
+  attributionChannel: string;
+  impressions?: number;
+  clicks?: number;
+  conversions?: number;
+  roas?: number;
+  vendorName: string;
+  notes?: string;
+}
+
+export interface MarketplaceSettlement {
+  id: string;
+  marketplace: 'amazon' | 'flipkart' | 'blinkit' | 'zepto' | 'instamart' | 'other';
+  statementPeriod: string;
+  orderCount: number;
+  grossSalesPaise: number;
+  referralFeesPaise: number;
+  closingFeesPaise: number;
+  fulfillmentFeesPaise: number;
+  shippingFeesPaise: number;
+  returnsRtoPaise: number;
+  adsDeductionPaise: number;
+  gstOnFeesPaise: number;
+  tcsPaise: number;
+  netBankPayoutPaise: number;
+  bankCreditDate: string;
+  status: 'reconciled' | 'pending' | 'disputed';
+  linkedAccountName: string;
+}
+
+// Section 13.4 Licences, Certificates & Compliance Types
+export type LicenceCategory =
+  | 'fssai'
+  | 'gst'
+  | 'weights_measures'
+  | 'udyam'
+  | 'trademark'
+  | 'pollution_control'
+  | 'factory_permit'
+  | 'fire_noc'
+  | 'gs1_barcode'
+  | 'lab_test'
+  | 'other';
+
+export interface LicenceEvent {
+  date: string;
+  action: string;
+  feePaise: number;
+  reference: string;
+}
+
+export interface LicenceCompliance {
+  id: string;
+  name: string;
+  category: LicenceCategory;
+  registrationNo: string;
+  issuingAuthority: string;
+  issueDate: string;
+  expiryDate: string;
+  renewalCadence: 'annual' | '3_year' | '5_year' | '10_year' | 'permanent' | 'quarterly';
+  status: 'active' | 'expiring_soon' | 'expired' | 'in_renewal';
+  annualCostPaise: number;
+  lastRenewalDate?: string;
+  penaltyPaise: number;
+  responsiblePerson: string;
+  documentRef?: string;
+  notes?: string;
+  history?: LicenceEvent[];
+}

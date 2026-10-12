@@ -14,6 +14,8 @@ import { FactoryFloorMode } from './components/modules/FactoryFloorMode';
 import { PayrollModule } from './components/modules/PayrollModule';
 import { DebtModule } from './components/modules/DebtModule';
 import { MachinesModule } from './components/modules/MachinesModule';
+import { AdvertisingModule } from './components/modules/AdvertisingModule';
+import { LicencesModule } from './components/modules/LicencesModule';
 import { DataBackupModule } from './components/modules/DataBackupModule';
 
 function AppContent() {
@@ -52,6 +54,10 @@ function AppContent() {
             onBackToDashboard={() => setActiveModule('dashboard')}
           />
         );
+      case 'advertising':
+        return <AdvertisingModule />;
+      case 'licences':
+        return <LicencesModule />;
       case 'payroll':
         return <PayrollModule />;
       case 'debt':
