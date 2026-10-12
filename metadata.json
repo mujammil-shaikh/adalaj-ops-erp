@@ -1,0 +1,6 @@
+{
+  "name": "Adalaj Operations ERP",
+  "description": "Enterprise offline-first PWA for spice & food manufacturing, packaging operations, lot traceability, stock movements, batch costing, and real-time financial intelligence.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

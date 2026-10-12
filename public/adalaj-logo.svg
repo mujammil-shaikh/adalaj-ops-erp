@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 280" width="800" height="280">
+  <defs>
+    <!-- Adalaj Heritage Cartouche Shape with ornamental side brackets -->
+    <clipPath id="cartouche-clip">
+      <path d="
+        M 140 30
+        L 660 30
+        A 25 25 0 0 1 685 55
+        L 685 90
+        C 715 90, 740 110, 775 140
+        C 740 170, 715 190, 685 190
+        L 685 225
+        A 25 25 0 0 1 660 250
+        L 140 250
+        A 25 25 0 0 1 115 225
+        L 115 190
+        C 85 190, 60 170, 25 140
+        C 60 110, 85 90, 115 90
+        L 115 55
+        A 25 25 0 0 1 140 30
+        Z
+      " />
+    </clipPath>
+  </defs>
+
+  <!-- Outer Cartouche Fill in Adalaj Crimson (#9E1C23) -->
+  <path d="
+    M 140 30
+    L 660 30
+    A 25 25 0 0 1 685 55
+    L 685 90
+    C 715 90, 740 110, 775 140
+    C 740 170, 715 190, 685 190
+    L 685 225
+    A 25 25 0 0 1 660 250
+    L 140 250
+    A 25 25 0 0 1 115 225
+    L 115 190
+    C 85 190, 60 170, 25 140
+    C 60 110, 85 90, 115 90
+    L 115 55
+    A 25 25 0 0 1 140 30
+    Z
+  " fill="#9E1C23" />
+
+  <!-- Inner Inset Border in White -->
+  <path d="
+    M 145 42
+    L 655 42
+    A 15 15 0 0 1 670 57
+    L 670 98
+    C 695 98, 715 115, 742 140
+    C 715 165, 695 182, 670 182
+    L 670 223
+    A 15 15 0 0 1 655 238
+    L 145 238
+    A 15 15 0 0 1 130 223
+    L 130 182
+    C 105 182, 85 165, 58 140
+    C 85 115, 105 98, 130 98
+    L 130 57
+    A 15 15 0 0 1 145 42
+    Z
+  " fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-linejoin="round" />
+
+  <!-- Inner Second Fine Line for Antique Heritage Depth -->
+  <path d="
+    M 152 49
+    L 648 49
+    A 10 10 0 0 1 658 59
+    L 658 102
+    C 680 102, 698 118, 722 140
+    C 698 162, 680 178, 658 178
+    L 658 221
+    A 10 10 0 0 1 648 231
+    L 152 231
+    A 10 10 0 0 1 142 221
+    L 142 178
+    C 120 178, 102 162, 78 140
+    C 102 118, 120 102, 142 102
+    L 142 59
+    A 10 10 0 0 1 152 49
+    Z
+  " fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-opacity="0.4" />
+
+  <!-- Brand Typography: ADALAJ -->
+  <text
+    x="400"
+    y="142"
+    text-anchor="middle"
+    fill="#FFFFFF"
+    font-family="'Playfair Display', Georgia, 'Times New Roman', serif"
+    font-size="94"
+    font-weight="800"
+    letter-spacing="6"
+  >ADALAJ</text>
+
+  <!-- Tagline: MADE FOR REAL MOMENTS -->
+  <text
+    x="400"
+    y="196"
+    text-anchor="middle"
+    fill="#FFFFFF"
+    font-family="'Montserrat', 'Cinzel', system-ui, -apple-system, sans-serif"
+    font-size="24"
+    font-weight="700"
+    letter-spacing="4"
+  >MADE FOR REAL MOMENTS</text>
+</svg>

@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7F1D1D" />
+      <stop offset="50%" stop-color="#9E1C23" />
+      <stop offset="100%" stop-color="#5B0E14" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded squircle with subtle gold border -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  <rect x="12" y="12" width="488" height="488" rx="100" fill="none" stroke="#FBBF24" stroke-width="4" stroke-opacity="0.3" />
+
+  <!-- Adalaj Cartouche Center Plaque -->
+  <g transform="translate(256, 256) scale(0.55) translate(-400, -140)">
+    <!-- Cartouche Fill -->
+    <path d="
+      M 140 30
+      L 660 30
+      A 25 25 0 0 1 685 55
+      L 685 90
+      C 715 90, 740 110, 775 140
+      C 740 170, 715 190, 685 190
+      L 685 225
+      A 25 25 0 0 1 660 250
+      L 140 250
+      A 25 25 0 0 1 115 225
+      L 115 190
+      C 85 190, 60 170, 25 140
+      C 60 110, 85 90, 115 90
+      L 115 55
+      A 25 25 0 0 1 140 30
+      Z
+    " fill="#8B1D24" stroke="#FBBF24" stroke-width="3" />
+
+    <!-- Inner Border in White -->
+    <path d="
+      M 145 42
+      L 655 42
+      A 15 15 0 0 1 670 57
+      L 670 98
+      C 695 98, 715 115, 742 140
+      C 715 165, 695 182, 670 182
+      L 670 223
+      A 15 15 0 0 1 655 238
+      L 145 238
+      A 15 15 0 0 1 130 223
+      L 130 182
+      C 105 182, 85 165, 58 140
+      C 85 115, 105 98, 130 98
+      L 130 57
+      A 15 15 0 0 1 145 42
+      Z
+    " fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linejoin="round" />
+
+    <!-- ADALAJ -->
+    <text
+      x="400"
+      y="142"
+      text-anchor="middle"
+      fill="#FFFFFF"
+      font-family="'Playfair Display', Georgia, 'Times New Roman', serif"
+      font-size="94"
+      font-weight="800"
+      letter-spacing="6"
+    >ADALAJ</text>
+
+    <!-- MADE FOR REAL MOMENTS -->
+    <text
+      x="400"
+      y="196"
+      text-anchor="middle"
+      fill="#FFFFFF"
+      font-family="system-ui, -apple-system, sans-serif"
+      font-size="24"
+      font-weight="700"
+      letter-spacing="4"
+    >MADE FOR REAL MOMENTS</text>
+  </g>
+
+  <!-- Bottom Brand Text -->
+  <text x="256" y="420" text-anchor="middle" fill="#FDE68A" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="700" letter-spacing="2">PACKING OPS</text>
+  <text x="256" y="448" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" opacity="0.8">GUJARAT · INDIA</text>
+</svg>

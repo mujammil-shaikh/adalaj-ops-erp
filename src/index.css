@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --sat: env(safe-area-inset-top, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+    --adalaj-crimson: #9a2229;
+    --adalaj-crimson-dark: #7f191f;
+    --adalaj-gold: #d97706;
+    --adalaj-gold-light: #f59e0b;
+    --adalaj-ivory: #faf8f5;
+  }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+  }
+
+  /* High-contrast defaults for crisp readability */
+  html:not(.dark) {
+    color-scheme: light;
+    color: #0f172a;
+    background-color: #faf8f5;
+  }
+
+  html.dark {
+    color-scheme: dark;
+    color: #f8fafc;
+    background-color: #020617;
+  }
+
+  /* Accessible form input styling */
+  input, select, textarea {
+    font-size: 16px;
+  }
+  @media (min-width: 640px) {
+    input, select, textarea {
+      font-size: 14px;
+    }
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(154, 34, 41, 0.3);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(154, 34, 41, 0.6);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
