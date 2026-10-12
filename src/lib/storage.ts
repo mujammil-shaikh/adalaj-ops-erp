@@ -20,6 +20,7 @@ import {
   LicenceEvent,
   AuthUser,
   PurchaseOrder,
+  PurchaseCategory,
   POFulfillmentStatus,
   POPartPayment,
   InterFirmTransfer,
@@ -1946,6 +1947,10 @@ class StorageEngine {
     return this.get<StockMovement[]>(STORAGE_KEYS.MOVEMENTS, initialMovements);
   }
 
+  saveMovements(movements: StockMovement[]): void {
+    this.set(STORAGE_KEYS.MOVEMENTS, movements);
+  }
+
   addMovement(mov: StockMovement): void {
     const list = this.getMovements();
     const updated = [mov, ...list];
@@ -2384,6 +2389,30 @@ class StorageEngine {
   addPurchaseOrder(po: PurchaseOrder): void {
     const list = this.getPurchaseOrders();
     this.set(STORAGE_KEYS.PURCHASE_ORDERS, [po, ...list]);
+
+    // Posting Service Invariant: Post initial advance payment to General Ledger if paid
+    if (po.payments && po.payments.length > 0) {
+      po.payments.forEach((payment) => {
+        const txn: Transaction = {
+          id: payment.id,
+          txnNo: payment.utrOrRef ? `TXN-${payment.utrOrRef}` : `TXN-ADV-${Date.now()}`,
+          date: payment.date,
+          direction: 'out',
+          accountId: payment.accountId,
+          accountName: payment.accountName,
+          partyId: po.partyId,
+          partyName: po.partyName,
+          amountPaise: payment.amountPaise,
+          headCategory: this.mapCategoryToExpenseHead(po.purchaseCategory),
+          mode: this.mapPaymentMode(payment.paymentMode),
+          reference: `PO: ${po.poNumber} | Ref: ${payment.utrOrRef}`,
+          status: 'posted',
+          notes: payment.notes || `Advance booking token on PO ${po.poNumber}`,
+        };
+        this.addTransaction(txn);
+      });
+    }
+
     this.logOutbox('create', 'bill', `Created PO ${po.poNumber} for ${po.partyName}`);
   }
 
@@ -2393,36 +2422,99 @@ class StorageEngine {
     this.logOutbox('update', 'bill', `Updated PO ${po.poNumber}`);
   }
 
+  // Posting Service Helper: Category mapping
+  private mapCategoryToExpenseHead(cat: PurchaseCategory): string {
+    switch (cat) {
+      case 'machinery':
+        return 'Plant Machinery & Capex';
+      case 'raw_material':
+        return 'Raw Material Purchase';
+      case 'packing_material':
+        return 'Packaging Material Purchase';
+      case 'rent':
+        return 'Factory Shed Rent';
+      case 'electricity':
+        return 'Electricity & Power';
+      case 'ca_legal':
+        return 'CA & Statutory Audit Retainer';
+      case 'stationery':
+        return 'Office & Packaging Consumables';
+      case 'licences':
+        return 'Licence & Regulatory Fees';
+      default:
+        return 'General Procurement';
+    }
+  }
+
+  // Posting Service Helper: Payment Mode mapping
+  private mapPaymentMode(mode: POPartPayment['paymentMode']): Transaction['mode'] {
+    switch (mode) {
+      case 'bank_neft_rtgs':
+        return 'HDFC NetBanking';
+      case 'upi':
+        return 'UPI';
+      case 'cheque':
+        return 'Cheque';
+      case 'cash':
+        return 'Cash';
+      default:
+        return 'HDFC NetBanking';
+    }
+  }
+
   addPOPartPayment(poId: string, payment: POPartPayment): void {
-    const pos = this.getPurchaseOrders().map((po) => {
-      if (po.id === poId) {
-        const existingPayments = po.payments || [];
+    const po = this.getPurchaseOrders().find((p) => p.id === poId);
+    if (!po) return;
+
+    // 1. Posting Service Invariant: Post double-entry cash/bank disbursement Transaction
+    const txn: Transaction = {
+      id: payment.id,
+      txnNo: payment.utrOrRef ? `TXN-${payment.utrOrRef}` : `TXN-PO-${Date.now()}`,
+      date: payment.date,
+      direction: 'out',
+      accountId: payment.accountId,
+      accountName: payment.accountName,
+      partyId: po.partyId,
+      partyName: po.partyName,
+      amountPaise: payment.amountPaise,
+      headCategory: this.mapCategoryToExpenseHead(po.purchaseCategory),
+      mode: this.mapPaymentMode(payment.paymentMode),
+      reference: `PO: ${po.poNumber} | Ref: ${payment.utrOrRef}`,
+      status: 'posted',
+      notes: payment.notes || `${payment.milestoneType.replace('_', ' ')} against PO ${po.poNumber}`,
+    };
+    this.addTransaction(txn);
+
+    // 2. Update PO record & milestone balances
+    const pos = this.getPurchaseOrders().map((p) => {
+      if (p.id === poId) {
+        const existingPayments = p.payments || [];
         const updatedPayments = [...existingPayments, payment];
-        const totalPaid = updatedPayments.reduce((acc, p) => acc + p.amountPaise, 0);
+        const totalPaid = updatedPayments.reduce((acc, pay) => acc + pay.amountPaise, 0);
         const advancePaid = updatedPayments
-          .filter((p) => p.milestoneType === 'advance')
-          .reduce((acc, p) => acc + p.amountPaise, 0);
-        const balanceDue = Math.max(0, po.totalAmountPaise - totalPaid);
+          .filter((pay) => pay.milestoneType === 'advance')
+          .reduce((acc, pay) => acc + pay.amountPaise, 0);
+        const balanceDue = Math.max(0, p.totalAmountPaise - totalPaid);
 
         return {
-          ...po,
+          ...p,
           payments: updatedPayments,
           totalPaidPaise: totalPaid,
           advancePaidPaise: advancePaid,
           balanceDuePaise: balanceDue,
           status:
-            balanceDue === 0 && po.status !== 'cancelled'
+            balanceDue === 0 && p.status !== 'cancelled'
               ? ('fulfilled' as const)
               : totalPaid > 0
               ? ('partially_fulfilled' as const)
-              : po.status,
+              : p.status,
         };
       }
-      return po;
+      return p;
     });
 
     this.savePurchaseOrders(pos);
-    this.logOutbox('create', 'transaction', `Recorded ${payment.milestoneType} payment on PO ${poId}`);
+    this.logOutbox('create', 'transaction', `Posted ${payment.milestoneType} payment ₹${payment.amountPaise / 100} on PO ${po.poNumber}`);
   }
 
   updatePOFulfillmentStatus(
@@ -2431,18 +2523,86 @@ class StorageEngine {
     notes?: string,
     grn?: string
   ): void {
-    const pos = this.getPurchaseOrders().map((po) => {
-      if (po.id === poId) {
+    const po = this.getPurchaseOrders().find((p) => p.id === poId);
+    if (!po) return;
+
+    const isNewlyReceived = (status === 'fulfilled' || status === 'partially_fulfilled') && po.status !== 'fulfilled';
+
+    // Posting Service Invariant: Post inward StockMovement & increment inventory on receipt
+    if (isNewlyReceived && (po.purchaseCategory === 'raw_material' || po.purchaseCategory === 'packing_material' || po.purchaseCategory === 'stationery')) {
+      const movements = this.getMovements();
+      const items = this.getItems();
+      const lots = this.getLots();
+      const newMovements: StockMovement[] = [];
+      const newLots: StockLot[] = [];
+
+      po.items.forEach((item, index) => {
+        const inwardQtyBase = po.purchaseCategory === 'raw_material' ? Math.round(item.qty * 1000) : item.qty;
+        const grnRef = grn || po.grnNumber || `GRN-${Date.now().toString().slice(-6)}`;
+
+        // 1. Post inward StockMovement
+        const movement: StockMovement = {
+          id: `mov_rec_${Date.now()}_${index}`,
+          date: new Date().toISOString().split('T')[0],
+          time: new Date().toTimeString().slice(0, 5),
+          itemId: item.id,
+          itemName: item.description,
+          locationId: 'loc_adalaj_main',
+          locationName: 'Adalaj Central Warehouse',
+          qtyBase: inwardQtyBase,
+          type: 'receipt',
+          reference: `${po.poNumber} / ${grnRef}`,
+          unitCostPaise: Math.round(item.unitPricePaise),
+          notes: `Goods received against PO ${po.poNumber} from ${po.partyName}. ${notes || 'QC cleared'}`,
+        };
+        newMovements.push(movement);
+
+        // 2. Increment item inventory currentStockBase
+        const matchedItem = items.find((it) => it.id === item.id || it.name.toLowerCase().includes(item.description.toLowerCase().slice(0, 8)));
+        if (matchedItem) {
+          matchedItem.currentStockBase += inwardQtyBase;
+        }
+
+        // 3. If raw material, create new traceable lot
+        if (po.purchaseCategory === 'raw_material') {
+          const lot: StockLot = {
+            id: `lot_po_${Date.now()}_${index}`,
+            lotNo: `LOT-${new Date().toISOString().slice(2, 7).replace('-', '')}-${String(lots.length + 1).padStart(3, '0')}`,
+            itemId: matchedItem ? matchedItem.id : item.id,
+            itemName: item.description,
+            supplierLotNo: grnRef,
+            supplierName: po.partyName,
+            receivedOn: new Date().toISOString().split('T')[0],
+            expiryOn: new Date(Date.now() + 365 * 86400000).toISOString().split('T')[0],
+            qtyBase: inwardQtyBase,
+            landedCostPerKgPaise: Math.round(item.unitPricePaise),
+            status: 'available',
+            locationId: 'loc_adalaj_main',
+          };
+          newLots.push(lot);
+        }
+      });
+
+      this.saveMovements([...newMovements, ...movements]);
+      this.saveItems(items);
+      if (newLots.length > 0) {
+        this.saveLots([...newLots, ...lots]);
+      }
+    }
+
+    // Update PO record
+    const pos = this.getPurchaseOrders().map((p) => {
+      if (p.id === poId) {
         return {
-          ...po,
+          ...p,
           status,
           actualFulfillmentDate:
-            status === 'fulfilled' ? new Date().toISOString().split('T')[0] : po.actualFulfillmentDate,
-          fulfillmentNotes: notes || po.fulfillmentNotes,
-          grnNumber: grn || po.grnNumber,
+            status === 'fulfilled' ? new Date().toISOString().split('T')[0] : p.actualFulfillmentDate,
+          fulfillmentNotes: notes || p.fulfillmentNotes,
+          grnNumber: grn || p.grnNumber,
         };
       }
-      return po;
+      return p;
     });
     this.savePurchaseOrders(pos);
     this.logOutbox('update', 'bill', `Updated PO fulfillment status ${poId} to ${status}`);
@@ -2460,7 +2620,40 @@ class StorageEngine {
   addInterFirmTransfer(transfer: InterFirmTransfer): void {
     const list = this.getInterFirmTransfers();
     this.set(STORAGE_KEYS.INTERFIRM_TRANSFERS, [transfer, ...list]);
-    this.logOutbox('create', 'movement', `Dispatched Delivery Challan ${transfer.transferChallanNo} to ${transfer.destinationFirmName}`);
+
+    // Posting Service Invariant: Post outward StockMovement & decrement warehouse inventory
+    const movements = this.getMovements();
+    const items = this.getItems();
+    const newMovements: StockMovement[] = [];
+
+    transfer.items.forEach((item, index) => {
+      // 1. Post outward StockMovement (transfer)
+      const movement: StockMovement = {
+        id: `mov_tr_${Date.now()}_${index}`,
+        date: transfer.date,
+        time: new Date().toTimeString().slice(0, 5),
+        itemId: item.itemId,
+        itemName: item.name,
+        locationId: 'loc_adalaj_main',
+        locationName: 'Adalaj Manufacturing Unit',
+        qtyBase: -item.totalGrams, // negative = transfer out
+        type: 'transfer',
+        reference: transfer.transferChallanNo,
+        unitCostPaise: Math.round(item.ratePerKgPaise / 1000),
+        notes: `Transfer to CFA Depot (${transfer.destinationFirmName}) via Vehicle ${transfer.vehicleNo} (E-Way: ${transfer.ewayBillNo || 'Portal'})`,
+      };
+      newMovements.push(movement);
+
+      // 2. Decrement inventory currentStockBase
+      const matchedItem = items.find((it) => it.id === item.itemId || it.sku === item.sku || it.name.toLowerCase().includes(item.name.toLowerCase().slice(0, 8)));
+      if (matchedItem) {
+        matchedItem.currentStockBase = Math.max(0, matchedItem.currentStockBase - item.totalGrams);
+      }
+    });
+
+    this.saveMovements([...newMovements, ...movements]);
+    this.saveItems(items);
+    this.logOutbox('create', 'movement', `Dispatched Delivery Challan ${transfer.transferChallanNo} (${transfer.items.length} items, ${transfer.totalGrams / 1000} kg) to ${transfer.destinationFirmName}`);
   }
 
   updateTransferStatus(id: string, status: TransferStatus, notes?: string): void {
