@@ -53,20 +53,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   const { isPhonePortrait, isPhoneLandscape, isSquare } = useDeviceAdaptive();
   const { toggleTheme, isDark } = useTheme();
 
-  const [activeRole, setActiveRole] = useState<UserRole>(currentUser?.role || db.getActiveRole());
+  const activeRole: UserRole = currentUser?.role || 'owner';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [backupToast, setBackupToast] = useState<string | null>(null);
-
-  const handleRoleChange = (role: UserRole) => {
-    setActiveRole(role);
-    db.setActiveRole(role);
-    if (currentUser) {
-      db.setAuthUser({
-        ...currentUser,
-        role,
-      });
-    }
-  };
 
   const handleQuickBackup = () => {
     const res = triggerAutomaticJsonBackup(currentUser?.name);
@@ -203,38 +192,18 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             )}
           </button>
 
-          {/* User Role Selector (Allowed for Super Admin) */}
+          {/* Verified Role Badge (Strict Read-Only) */}
           <div
-            className={`hidden lg:flex items-center gap-1.5 border rounded-lg px-2.5 py-1 text-xs ${
+            className={`hidden lg:flex items-center gap-1.5 border rounded-lg px-2.5 py-1 text-xs select-none ${
               isDark ? 'bg-slate-950/80 border-slate-800 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-800'
             }`}
           >
-            <Shield className="w-3.5 h-3.5 text-[#9A2229]" />
-            <select
-              value={activeRole}
-              onChange={(e) => handleRoleChange(e.target.value as UserRole)}
-              className="bg-transparent font-medium text-xs focus:outline-none cursor-pointer"
-            >
-              <option value="owner" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>
-                Owner / Super Admin
-              </option>
-              <option value="accountant" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>
-                Finance & Accountant
-              </option>
-              <option value="supervisor" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>
-                Floor Supervisor
-              </option>
-              <option value="store_keeper" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>
-                Store Keeper
-              </option>
-              <option value="salesman" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>
-                Sales & CFA Dispatch
-              </option>
-              <option value="ca_auditor" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>
-                CA / Auditor (Read-Only)
-              </option>
-            </select>
+            <ShieldCheck className="w-3.5 h-3.5 text-[#9A2229] dark:text-amber-400" />
+            <span className="font-bold text-[11px]">
+              Role: {ROLE_PERMISSIONS[activeRole]?.name.split('/')[0]}
+            </span>
           </div>
+
 
           {/* User Profile Chip */}
           {currentUser && (
@@ -494,33 +463,23 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                 </button>
               </div>
 
-              {/* Role Switcher in Drawer */}
+              {/* Verified RBAC Role in Drawer (Strict Read-Only) */}
               <div
-                className={`p-2.5 rounded-lg border text-xs ${
+                className={`p-2.5 rounded-lg border text-xs select-none ${
                   isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
                 }`}
               >
                 <span
-                  className={`text-[11px] block mb-1 font-semibold ${
-                    isDark ? 'text-slate-400' : 'text-slate-600'
+                  className={`text-[10px] block mb-0.5 font-bold uppercase tracking-wider ${
+                    isDark ? 'text-slate-400' : 'text-slate-500'
                   }`}
                 >
-                  Active RBAC Role
+                  Verified Security Role
                 </span>
-                <select
-                  value={activeRole}
-                  onChange={(e) => handleRoleChange(e.target.value as UserRole)}
-                  className={`w-full border rounded p-1.5 text-xs font-medium cursor-pointer ${
-                    isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-900'
-                  }`}
-                >
-                  <option value="owner">Owner / Super Admin</option>
-                  <option value="accountant">Finance & Accountant</option>
-                  <option value="supervisor">Floor Supervisor</option>
-                  <option value="store_keeper">Store Keeper</option>
-                  <option value="salesman">Sales & CFA Dispatch</option>
-                  <option value="ca_auditor">CA / Auditor</option>
-                </select>
+                <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white">
+                  <ShieldCheck className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span className="truncate">{ROLE_PERMISSIONS[activeRole]?.name}</span>
+                </div>
               </div>
 
               {/* Drawer Links */}

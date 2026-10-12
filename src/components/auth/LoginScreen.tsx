@@ -1,19 +1,14 @@
 import React, { useState } from 'react';
 import {
-  Shield,
   Lock,
   Mail,
   Download,
-  CheckCircle,
   AlertCircle,
-  Sparkles,
   ArrowRight,
   ShieldCheck,
-  UserCheck,
-  Building,
 } from 'lucide-react';
-import { db, PREDEFINED_USERS } from '../../lib/storage';
-import { AuthUser, ROLE_PERMISSIONS } from '../../types';
+import { db } from '../../lib/storage';
+import { AuthUser } from '../../types';
 import { AdalajLogo } from '../common/AdalajLogo';
 import { triggerAutomaticJsonBackup } from '../../lib/backup';
 import { useTheme } from '../../context/ThemeContext';
@@ -34,15 +29,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     e.preventDefault();
     setError(null);
 
-    if (!email.trim() || !password.trim()) {
-      setError('Please provide both official email address and password.');
+    const cleanEmail = email.trim();
+    const cleanPassword = password.trim();
+
+    if (!cleanEmail || !cleanPassword) {
+      setError('Please provide both your registered email address and password.');
       return;
     }
 
     setLoading(true);
 
     setTimeout(() => {
-      const res = db.login(email, password);
+      const res = db.login(cleanEmail, cleanPassword);
       if (res.success && res.user) {
         let backupFilename: string | undefined;
         if (autoBackupOnLogin) {
@@ -59,19 +57,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     }, 200);
   };
 
-  const handleQuickSelectEmail = (userEmail: string) => {
-    setEmail(userEmail);
-    setPassword('');
-    setError(null);
-  };
-
   return (
     <div
       className={`min-h-screen flex flex-col justify-center items-center px-4 py-8 font-sans transition-colors duration-200 ${
         isDark ? 'bg-slate-950 text-slate-100' : 'bg-[#FAF8F5] text-slate-900'
       }`}
     >
-      <div className="w-full max-w-xl mx-auto space-y-6">
+      <div className="w-full max-w-md mx-auto space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-3">
           <div className="flex justify-center mb-2">
@@ -79,10 +71,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           </div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase bg-[#9A2229]/10 text-[#9A2229] dark:bg-amber-500/10 dark:text-amber-300 border border-[#9A2229]/20 dark:border-amber-500/20">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Role-Based Operational Cockpit & ERP</span>
+            <span>Role-Based Operations ERP Gate</span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-            Sarkhej-Gandhinagar Highway · Adalaj, Gujarat · Enterprise Production & Financial Gate
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+            Sarkhej-Gandhinagar Highway · Adalaj, Gujarat · Manufacturing & Financial Intelligence
           </p>
         </div>
 
@@ -100,7 +92,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               Sign In to Your Workspace
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Modules and financial visibility are strictly restricted by server-side RBAC directives.
+              Please enter your authorized corporate credentials to access your designated workspace.
             </p>
           </div>
 
@@ -121,9 +113,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                 <input
                   type="email"
                   required
+                  autoComplete="username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@adalajfoods.com"
+                  placeholder="name@adalajfoods.com"
                   className={`w-full pl-9 pr-3 py-2.5 rounded-xl border text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-[#9A2229]/30 ${
                     isDark
                       ? 'bg-slate-950 border-slate-700 text-white placeholder-slate-500'
@@ -142,6 +135,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                 <input
                   type="password"
                   required
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -167,7 +161,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                 <div>
                   <div className="font-bold text-[11px]">Automatic Database JSON Backup</div>
                   <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                    Instantly save local snapshot to disk on login
+                    Saves encrypted snapshot to disk upon login
                   </div>
                 </div>
               </div>
@@ -184,47 +178,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               disabled={loading}
               className="w-full py-3 px-4 rounded-xl font-bold text-sm text-white bg-[#9A2229] hover:bg-[#851C22] shadow-md hover:shadow-lg transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
-              <span>{loading ? 'Authenticating & Verifying Role...' : 'Enter ERP System'}</span>
+              <span>{loading ? 'Authenticating Credentials...' : 'Sign In'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
-
-          {/* Verified Role Accounts (Email Selector Only) */}
-          <div className="mt-8 pt-6 border-t dark:border-slate-800">
-            <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center justify-between">
-              <span>Authorized Enterprise Accounts:</span>
-              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">password required</span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {PREDEFINED_USERS.map((item) => {
-                const isSelected = email === item.email;
-                const roleMeta = ROLE_PERMISSIONS[item.user.role];
-
-                return (
-                  <button
-                    key={item.user.id}
-                    type="button"
-                    onClick={() => handleQuickSelectEmail(item.email)}
-                    className={`p-2.5 text-left rounded-xl border text-xs transition cursor-pointer ${
-                      isSelected
-                        ? 'border-[#9A2229] bg-[#9A2229]/10 text-[#9A2229] dark:bg-amber-500/10 dark:border-amber-400 dark:text-amber-300 font-bold'
-                        : isDark
-                        ? 'border-slate-800 bg-slate-950/40 text-slate-300 hover:bg-slate-800'
-                        : 'border-slate-200 bg-slate-50/80 text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    <div className="font-semibold truncate text-[11px]">{roleMeta.name.split('/')[0]}</div>
-                    <div className="text-[10px] text-slate-400 font-mono truncate">{item.email}</div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         </div>
 
         {/* Security Notice */}
         <div className="text-center text-[11px] text-slate-400 space-y-1">
-          <p>Adalaj Operations ERP · Built with Integer Paise Precision & Non-Destructive Ledger</p>
+          <p>Adalaj Operations ERP · Integer Paise Precision & Non-Destructive Ledger</p>
           <p className="text-[10px] opacity-75">GSTIN: 24AAGCS9412F1Z4 · FoSCoS FSSAI #10724026000192</p>
         </div>
       </div>
