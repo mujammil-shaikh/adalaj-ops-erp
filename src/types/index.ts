@@ -1,4 +1,12 @@
-export type UserRole = 'owner' | 'accountant' | 'store_keeper' | 'supervisor' | 'salesman' | 'ca_auditor';
+export type UserRole =
+  | 'owner'
+  | 'accountant'
+  | 'store_keeper'
+  | 'supervisor'
+  | 'salesman'
+  | 'procurement'
+  | 'marketing'
+  | 'ca_auditor';
 
 export type BusinessEntityId = 'pvt_ltd' | 'sister_prop';
 
@@ -408,6 +416,12 @@ export interface AuthUser {
   lastLoginAt?: string;
 }
 
+export interface SystemUserCredential {
+  email: string;
+  password: string;
+  user: AuthUser;
+}
+
 export const ROLE_PERMISSIONS: Record<
   UserRole,
   {
@@ -421,6 +435,13 @@ export const ROLE_PERMISSIONS: Record<
     name: 'Super Admin / Owner',
     description: 'Full administrative access across all plant, operational, and financial modules',
     allowedModules: [
+      'portal_admin',
+      'portal_sales',
+      'portal_procurement',
+      'portal_store',
+      'portal_floor',
+      'portal_finance',
+      'portal_marketing',
       'dashboard',
       'invoices',
       'batches',
@@ -442,6 +463,7 @@ export const ROLE_PERMISSIONS: Record<
     name: 'Chief Accountant & Finance',
     description: 'Access to Expenses, Bills, Invoices, POs, GST ITC, Part-payments, Payroll, Debt, Licences, and Tally Export',
     allowedModules: [
+      'portal_finance',
       'dashboard',
       'invoices',
       'pos',
@@ -459,6 +481,7 @@ export const ROLE_PERMISSIONS: Record<
     name: 'Plant & Production Supervisor',
     description: 'Production batches, floor kiosk mode, machine maintenance, and stock issue tracking',
     allowedModules: [
+      'portal_floor',
       'batches',
       'floor_mode',
       'inventory',
@@ -471,6 +494,7 @@ export const ROLE_PERMISSIONS: Record<
     name: 'Store & Warehouse Keeper',
     description: 'Stock lots, PO material receipts/GRN, and delivery challans to CFA Depot',
     allowedModules: [
+      'portal_store',
       'inventory',
       'pos',
       'batches',
@@ -483,12 +507,37 @@ export const ROLE_PERMISSIONS: Record<
     name: 'Sales & Dispatch Manager',
     description: 'Customer Invoices, Quotations, Finished goods dispatch, CFA Depot transfers, Export shipments, Ads and E-commerce',
     allowedModules: [
+      'portal_sales',
       'dashboard',
       'invoices',
       'interfirm_export',
       'advertising',
       'inventory',
       'licences',
+    ],
+    canWrite: true,
+  },
+  procurement: {
+    name: 'Raw Material Procurement Manager',
+    description: 'Daily Mandi spot rates (Unjha, Gondal, Guntur), spot POs, blend cost inputs, and supplier part-payments',
+    allowedModules: [
+      'portal_procurement',
+      'pos',
+      'inventory',
+      'interfirm_export',
+      'backup',
+    ],
+    canWrite: true,
+  },
+  marketing: {
+    name: 'Advertising & Marketing Lead',
+    description: 'Digital campaigns, physical signage/banners, marketplace fee bridges, and lead generation',
+    allowedModules: [
+      'portal_marketing',
+      'advertising',
+      'invoices',
+      'expenses',
+      'interfirm_export',
     ],
     canWrite: true,
   },
@@ -1173,3 +1222,103 @@ export interface FinancialIntelligenceMetrics {
   gpGrowthPct: number;
   patGrowthPct: number;
 }
+
+// ============================================================================
+// DYNAMIC PACKAGING SPECIFICATION CRUD TYPES (TIER 1, TIER 2, TIER 3)
+// ============================================================================
+export type PackagingTierLevel = 1 | 2 | 3;
+
+export interface PackagingTierSpec {
+  id: string;
+  tierLevel: PackagingTierLevel;
+  code: string;                 // e.g. 'pouch_sachet_10rs', 'pouch_100g', 'bundle_100g_10pcs', 'carton_20kg'
+  displayName: string;          // e.g. '₹10 Sachet Pouch (18g - 25g)'
+  category: 'primary' | 'secondary' | 'tertiary';
+  netCapacityGrams: number;     // e.g. 20 for ₹10 pouch, 1000 for 1kg bundle, 25000 for 25kg carton
+  tareWeightGrams: number;      // weight of packaging material itself
+  materialType: string;         // 'BOPP / MET-PET 3-Ply Foil', 'Heat Shrink Film', '5-Ply Corrugated Kraft'
+  machineTypeRequired?: string; // 'Form-Fill-Seal (FFS)', 'Band Sealer', 'Carton Taper'
+  unitsPerParent?: number;      // e.g. 10 pouches in secondary bundle, 20 bundles in tertiary carton
+  isExportCompliant: boolean;
+  isActive: boolean;
+  costPaisePerUnit: number;     // Material cost per pouch/bundle/carton in integer paise
+  notes?: string;
+}
+
+// ============================================================================
+// DAILY MANDI SPOT RATES & BLENDED COST RATIO ENGINE TYPES
+// ============================================================================
+export interface MandiSpotRateRecord {
+  id: string;
+  date: string;
+  spiceName: 'Chilli' | 'Turmeric' | 'Coriander' | 'Cumin' | 'Blended Mix' | string;
+  mandiLocation: 'Unjha Mandi' | 'Gondal Yard' | 'Guntur Mandi' | 'Sangli Yard' | 'Ramganj Mandi' | string;
+  grade: 'Whole Premium' | 'Medium / Commercial' | 'Standard Powder Grade' | string;
+  spotRatePerKgRupees: number;
+  dailyChangeRupees: number; // e.g. +5 or -3
+  arrivalBags: number;       // mandi arrival volume
+  reportedBy: string;
+  notes?: string;
+}
+
+export interface BlendedCostCalculation {
+  spiceName: string;
+  totalRequiredKg: number;
+  stockOnHandKg: number;
+  stockHistoricalCostRupees: number;
+  deficitToProcureKg: number;
+  spotMarketRateRupees: number;
+  blendedRawCostPerKg: number; // weighted average
+  millingShrinkagePct: number; // default 2%
+  milledCostPerKg: number;
+  packagingCostPerKg: number;  // Tier 1 + 2 + 3
+  opexAllocationPerKg: number; // factory opex
+  totalLandedCostPerKg: number;
+  targetProfitMarginPct: number; // e.g. 15%
+  recommendedQuotedPricePerKg: number;
+  recommendedQuotedPriceUSD: number; // with exchange rate
+}
+
+// ============================================================================
+// UNIVERSAL DEPARTMENTAL TO-DO STACK & DAY-END REPORTING TYPES
+// ============================================================================
+export interface DailyTodoItem {
+  id: string;
+  role: UserRole;
+  title: string;
+  description?: string;
+  priority: 'urgent' | 'high' | 'normal';
+  dueDate: string;
+  isCompleted: boolean;
+  completedAt?: string;
+  assignedBy?: string;
+  actionModule?: string;
+}
+
+export interface DayEndReport {
+  id: string;
+  date: string;
+  shift: 'morning' | 'evening' | 'general' | 'night';
+  role: UserRole;
+  submittedBy: string;
+  primaryMetricLabel: string;
+  primaryMetricValue: string;
+  summaryNotes: string;
+  blockersOrWastage?: string;
+  tasksCompletedCount: number;
+  timestamp: string;
+}
+
+// ============================================================================
+// ROLE-TAILORED ENTERPRISE PORTAL IDENTIFIERS
+// ============================================================================
+export type PortalId =
+  | 'admin'
+  | 'sales'
+  | 'procurement'
+  | 'store'
+  | 'floor'
+  | 'finance'
+  | 'marketing'
+  | 'auditor';
+

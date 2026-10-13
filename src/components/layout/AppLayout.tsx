@@ -26,6 +26,8 @@ import {
   UserCheck,
   Building2,
   Scale,
+  Cpu,
+  TrendingUp,
 } from 'lucide-react';
 import { UserRole, AuthUser, ROLE_PERMISSIONS, BusinessEntityId } from '../../types';
 import { db } from '../../lib/storage';
@@ -75,8 +77,15 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     }
   };
 
-  // Master List of Modules
+  // Master List of Modules with Dedicated Role Portals
   const allNavItems = [
+    { id: 'portal_admin', label: '👑 Super Admin Master', icon: Shield, highlight: true },
+    { id: 'portal_sales', label: '💼 Sales & CRM Portal', icon: FileText, highlight: true },
+    { id: 'portal_procurement', label: '🌾 Mandi Procurement', icon: TrendingUp, highlight: true },
+    { id: 'portal_store', label: '📦 Store & Warehouse', icon: Boxes, highlight: true },
+    { id: 'portal_floor', label: '🏭 Factory Floor Kiosk', icon: Cpu, highlight: true },
+    { id: 'portal_finance', label: '💰 Finance & Accounts', icon: Landmark, highlight: true },
+    { id: 'portal_marketing', label: '📣 Marketing & Growth', icon: Megaphone, highlight: true },
     { id: 'dashboard', label: 'Where Is My Money', icon: LayoutDashboard },
     { id: 'invoices', label: 'Invoices & Quotations', icon: FileSpreadsheet },
     { id: 'batches', label: 'Packing Batches', icon: Package },
@@ -86,7 +95,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     { id: 'interfirm_export', label: 'Entities & Reconciliation', icon: Scale },
     { id: 'advertising', label: 'Ads & E-Commerce', icon: Megaphone },
     { id: 'licences', label: 'Licences & Compliance', icon: ShieldCheck },
-    { id: 'floor_mode', label: 'Factory Floor Mode', icon: QrCode, highlight: true },
+    { id: 'floor_mode', label: 'Factory Floor Mode', icon: QrCode },
     { id: 'payroll', label: 'Payroll & Wages', icon: Users },
     { id: 'debt', label: 'Loans & EMI', icon: Landmark },
     { id: 'machines', label: 'Plant Machines', icon: Wrench },

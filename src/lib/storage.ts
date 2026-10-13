@@ -45,6 +45,13 @@ import {
   PackingFloorFulfillmentJob,
   FinancialHorizon,
   FinancialIntelligenceMetrics,
+  PackagingTierSpec,
+  PackagingTierLevel,
+  MandiSpotRateRecord,
+  BlendedCostCalculation,
+  DailyTodoItem,
+  DayEndReport,
+  PortalId,
 } from '../types';
 
 const STORAGE_KEYS = {
@@ -79,6 +86,11 @@ const STORAGE_KEYS = {
   SALES_QUOTATIONS: 'adalaj_sales_quotations_v1',
   VOIDED_INVOICES: 'adalaj_voided_invoices_v1',
   PACKING_FLOOR_JOBS: 'adalaj_packing_floor_jobs_v1',
+  PACKAGING_SPECS: 'adalaj_packaging_specs_v1',
+  MANDI_SPOT_RATES: 'adalaj_mandi_spot_rates_v1',
+  DAILY_TODOS: 'adalaj_daily_todos_v1',
+  DAY_END_REPORTS: 'adalaj_day_end_reports_v1',
+  SYSTEM_USERS: 'adalaj_system_users_v1',
 };
 
 // Initial Seed Data
@@ -1455,6 +1467,32 @@ export const PREDEFINED_USERS: SystemUserCredential[] = [
     },
   },
   {
+    email: 'procurement@adalajfoods.com',
+    password: 'Mandi@2026',
+    user: {
+      id: 'usr_proc_01',
+      email: 'procurement@adalajfoods.com',
+      name: 'Jayesh Patel (RM Sourcing & Mandi Buyer)',
+      role: 'procurement',
+      phone: '+91 98250 99997',
+      department: 'Raw Material Procurement & Mandi Sourcing',
+      lastLoginAt: '2026-10-12T15:00:00.000Z',
+    },
+  },
+  {
+    email: 'marketing@adalajfoods.com',
+    password: 'Growth@2026',
+    user: {
+      id: 'usr_mkt_01',
+      email: 'marketing@adalajfoods.com',
+      name: 'Aanya Sharma (Brand Marketing & E-Commerce Lead)',
+      role: 'marketing',
+      phone: '+91 98250 99998',
+      department: 'Brand Marketing & Digital Growth',
+      lastLoginAt: '2026-10-12T14:45:00.000Z',
+    },
+  },
+  {
     email: 'auditor@adalajfoods.com',
     password: 'Audit@2026',
     user: {
@@ -2616,6 +2654,641 @@ const initialPackingFloorJobs: PackingFloorFulfillmentJob[] = [
 ];
 
 const initialVoidedInvoices: VoidedInvoiceAudit[] = [];
+
+export const initialPackagingSpecs: PackagingTierSpec[] = [
+  // --- TIER 1: PRIMARY PACKAGING (FILLING) ---
+  {
+    id: 'spec_t1_10rs',
+    tierLevel: 1,
+    code: 'pouch_sachet_10rs',
+    displayName: '₹10 Sachet Pouch (18g - 25g net)',
+    category: 'primary',
+    netCapacityGrams: 20,
+    tareWeightGrams: 1.5,
+    materialType: 'BOPP / MET-PET 3-Ply Barrier Foil',
+    machineTypeRequired: 'High-Speed Vertical FFS (Strip/Sachet)',
+    unitsPerParent: 30, // 30 pcs per secondary bundle
+    isExportCompliant: false,
+    isActive: true,
+    costPaisePerUnit: 45, // ₹0.45 per pouch
+    notes: 'Mass-market consumer trial sachet, nitro-flushed for 9-month shelf life',
+  },
+  {
+    id: 'spec_t1_50g',
+    tierLevel: 1,
+    code: 'pouch_50g',
+    displayName: '50g Consumer Pouch',
+    category: 'primary',
+    netCapacityGrams: 50,
+    tareWeightGrams: 2.5,
+    materialType: 'Glossy Laminated Food-Grade Foil',
+    machineTypeRequired: 'Rotary Form-Fill-Seal Machine',
+    unitsPerParent: 20,
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 75, // ₹0.75
+    notes: 'Popular retail Kirana store size for small households',
+  },
+  {
+    id: 'spec_t1_100g',
+    tierLevel: 1,
+    code: 'pouch_100g',
+    displayName: '100g Consumer Pouch',
+    category: 'primary',
+    netCapacityGrams: 100,
+    tareWeightGrams: 3.8,
+    materialType: 'Multi-layer Nitrogen Flushable Pouch',
+    machineTypeRequired: 'Auger Servo Cylinder Filler #1',
+    unitsPerParent: 10,
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 120, // ₹1.20
+    notes: 'Core FMCG volume driver, Agmark & FSSAI certified barcode print',
+  },
+  {
+    id: 'spec_t1_200g',
+    tierLevel: 1,
+    code: 'pouch_200g',
+    displayName: '200g Consumer Pouch',
+    category: 'primary',
+    netCapacityGrams: 200,
+    tareWeightGrams: 5.2,
+    materialType: 'Multi-layer Nitrogen Flushable Pouch',
+    machineTypeRequired: 'Auger Servo Cylinder Filler #1',
+    unitsPerParent: 5,
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 180, // ₹1.80
+    notes: 'High-margin family pack size for Modern Trade & Supermarkets',
+  },
+  {
+    id: 'spec_t1_500g',
+    tierLevel: 1,
+    code: 'pouch_500g',
+    displayName: '500g Consumer Pouch',
+    category: 'primary',
+    netCapacityGrams: 500,
+    tareWeightGrams: 8.5,
+    materialType: 'Stand-up Zipper / Heavy 3-Ply Pouch',
+    machineTypeRequired: 'Semi-Automatic Auger & Band Sealer',
+    unitsPerParent: 2,
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 350, // ₹3.50
+    notes: 'HORECA and large household kitchen staple pack',
+  },
+  {
+    id: 'spec_t1_1kg',
+    tierLevel: 1,
+    code: 'bag_1kg',
+    displayName: '1kg Consumer Standee Bag',
+    category: 'primary',
+    netCapacityGrams: 1000,
+    tareWeightGrams: 14.0,
+    materialType: 'Heavy-Duty Gusseted Laminated Bag',
+    machineTypeRequired: 'Pouch Packing Machine & Band Sealer',
+    unitsPerParent: 1,
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 600, // ₹6.00
+    notes: 'Catering and institutional direct kitchen pack',
+  },
+  {
+    id: 'spec_t1_2kg',
+    tierLevel: 1,
+    code: 'bag_2kg',
+    displayName: '2kg Consumer Bag',
+    category: 'primary',
+    netCapacityGrams: 2000,
+    tareWeightGrams: 22.0,
+    materialType: 'Gusseted Laminated Food Bag',
+    machineTypeRequired: 'Manual Scale & Continuous Band Sealer',
+    unitsPerParent: 1,
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 950, // ₹9.50
+    notes: 'Restaurant & hotel bulk kitchen size',
+  },
+  {
+    id: 'spec_t1_5kg',
+    tierLevel: 1,
+    code: 'bag_5kg',
+    displayName: '5kg Consumer Bag',
+    category: 'primary',
+    netCapacityGrams: 5000,
+    tareWeightGrams: 45.0,
+    materialType: 'Heavy Laminated Poly Bag with Carry Handle',
+    machineTypeRequired: 'Pedal Sealer / Band Sealer',
+    unitsPerParent: 1,
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 1800, // ₹18.00
+    notes: 'Commercial kitchen and sweetmaker bulk bag',
+  },
+  {
+    id: 'spec_t1_10kg',
+    tierLevel: 1,
+    code: 'bulk_pp_10kg',
+    displayName: '10kg Industrial Bulk PP (Direct Loose Powder)',
+    category: 'primary',
+    netCapacityGrams: 10000,
+    tareWeightGrams: 90.0,
+    materialType: 'Food-Grade Woven Polypropylene (PP) with Inner Liner',
+    machineTypeRequired: 'Bulk Auger Filler & Stitching Machine',
+    unitsPerParent: 1,
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 2500, // ₹25.00
+    notes: 'Industrial supply for snack seasoning & namkeen manufacturers',
+  },
+  {
+    id: 'spec_t1_25kg',
+    tierLevel: 1,
+    code: 'bulk_pp_25kg',
+    displayName: '25kg Industrial Bulk PP (Direct Loose Powder)',
+    category: 'primary',
+    netCapacityGrams: 25000,
+    tareWeightGrams: 160.0,
+    materialType: 'Heavy Woven Polypropylene (PP) with LDPE Liner',
+    machineTypeRequired: 'Heavy Auger Bag Filler & Double Stitcher',
+    unitsPerParent: 1,
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 4200, // ₹42.00
+    notes: 'Standard industrial manufacturing sack (ITC / Haldiram grade)',
+  },
+  {
+    id: 'spec_t1_50kg',
+    tierLevel: 1,
+    code: 'bulk_pp_50kg',
+    displayName: '50kg Industrial Bulk PP (Direct Loose Powder)',
+    category: 'primary',
+    netCapacityGrams: 50000,
+    tareWeightGrams: 240.0,
+    materialType: 'Heavy Duty UV-Stabilized Woven PP with 50-micron Liner',
+    machineTypeRequired: 'Industrial Floor Scale & Portable Bag Closer',
+    unitsPerParent: 1,
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 6800, // ₹68.00
+    notes: 'Full mandi export standard sack',
+  },
+
+  // --- TIER 2: SECONDARY BUNDLING (OVER-WRAP) ---
+  {
+    id: 'spec_t2_10rs_30pcs',
+    tierLevel: 2,
+    code: 'bundle_10rs_30pcs',
+    displayName: '₹10 Pouch Bundle (3 Strips × 10 Pcs = 30 Pcs)',
+    category: 'secondary',
+    netCapacityGrams: 600, // 30 x 20g = 600g
+    tareWeightGrams: 12.0,
+    materialType: 'Outer LDPE Shrink Poly Sleeve + Header Punch',
+    machineTypeRequired: 'Manual Strip Stitching & Shrink Tunnel',
+    unitsPerParent: 30, // 30 pouches per bundle
+    isExportCompliant: false,
+    isActive: true,
+    costPaisePerUnit: 150, // ₹1.50 per bundle packaging material
+    notes: '3 hanging strips of 10 pouches each bundled for wholesale distributor delivery',
+  },
+  {
+    id: 'spec_t2_100g_10pcs',
+    tierLevel: 2,
+    code: 'bundle_100g_10pcs',
+    displayName: '100g Pouch Bundle (10 pcs / 1 kg Net)',
+    category: 'secondary',
+    netCapacityGrams: 1000, // 10 x 100g = 1,000g
+    tareWeightGrams: 8.0,
+    materialType: 'Heat-Shrink Poly Film / Outer Envelope',
+    machineTypeRequired: 'Heat Shrink Chamber / Hand Sealer',
+    unitsPerParent: 10,
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 90, // ₹0.90
+    notes: 'Secondary 1kg trading bundle for retailers',
+  },
+  {
+    id: 'spec_t2_200g_5pcs',
+    tierLevel: 2,
+    code: 'bundle_200g_5pcs',
+    displayName: '200g Pouch Bundle (5 pcs / 1 kg Net)',
+    category: 'secondary',
+    netCapacityGrams: 1000, // 5 x 200g = 1,000g
+    tareWeightGrams: 8.0,
+    materialType: 'Heat-Shrink Poly Film',
+    machineTypeRequired: 'Heat Shrink Chamber',
+    unitsPerParent: 5,
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 90, // ₹0.90
+    notes: 'Secondary 1kg bundle for kirana shelves',
+  },
+  {
+    id: 'spec_t2_500g_2pcs',
+    tierLevel: 2,
+    code: 'bundle_500g_2pcs',
+    displayName: '500g Pouch Bundle (2 pcs / 1 kg Net)',
+    category: 'secondary',
+    netCapacityGrams: 1000, // 2 x 500g = 1,000g
+    tareWeightGrams: 6.0,
+    materialType: 'Clear LDPE Over-Wrap Bag',
+    machineTypeRequired: 'Manual Taping / Impulse Sealer',
+    unitsPerParent: 2,
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 60, // ₹0.60
+    notes: 'Twin-pack bundle for wholesale distribution',
+  },
+  {
+    id: 'spec_t2_none_direct',
+    tierLevel: 2,
+    code: 'none_direct',
+    displayName: 'Direct Pass-Through to Tertiary (1kg, 2kg, 5kg, Bulk Sacks)',
+    category: 'secondary',
+    netCapacityGrams: 0,
+    tareWeightGrams: 0,
+    materialType: 'None (Directly loaded into tertiary outer shipper)',
+    unitsPerParent: 1,
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 0,
+    notes: 'No intermediate secondary bundle needed; packs go directly into shipper boxes or bulk sacks',
+  },
+
+  // --- TIER 3: TERTIARY SHIPPER PACKAGING (LOGISTICS) ---
+  {
+    id: 'spec_t3_pp_15kg',
+    tierLevel: 3,
+    code: 'pp_shipper_15kg',
+    displayName: 'Woven PP Outer Bag (15kg Logistics Shipper)',
+    category: 'tertiary',
+    netCapacityGrams: 15000,
+    tareWeightGrams: 110.0,
+    materialType: 'High-Density Woven Polypropylene with Stitch Closure',
+    machineTypeRequired: 'Portable Bag Closer Stitching Machine',
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 2800, // ₹28.00
+    notes: 'Outer logistics shipper for rail parcel and regional road transport',
+  },
+  {
+    id: 'spec_t3_pp_25kg',
+    tierLevel: 3,
+    code: 'pp_shipper_25kg',
+    displayName: 'Woven PP Outer Bag (25kg Logistics Shipper)',
+    category: 'tertiary',
+    netCapacityGrams: 25000,
+    tareWeightGrams: 165.0,
+    materialType: 'Reinforced Woven Polypropylene Sacks',
+    machineTypeRequired: 'Portable Bag Closer Stitching Machine',
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 3800, // ₹38.00
+    notes: 'Standard 25kg outer shipper carrying ~41 secondary bundles of ₹10 sachets or 25 bundles of 100g',
+  },
+  {
+    id: 'spec_t3_pp_50kg',
+    tierLevel: 3,
+    code: 'pp_shipper_50kg',
+    displayName: 'Heavy-Duty Woven PP Bag (50kg Shipper)',
+    category: 'tertiary',
+    netCapacityGrams: 50000,
+    tareWeightGrams: 250.0,
+    materialType: 'Heavy Industrial Woven Polypropylene Sack with Tamper Seal',
+    machineTypeRequired: 'Heavy Double-Thread Bag Stitcher',
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 5500, // ₹55.00
+    notes: '50kg outer shipper for bulk freight and container dispatch',
+  },
+  {
+    id: 'spec_t3_jute_25kg',
+    tierLevel: 3,
+    code: 'jute_sack_25kg',
+    displayName: 'Food-Grade Jute Sacks (25kg Export Quality)',
+    category: 'tertiary',
+    netCapacityGrams: 25000,
+    tareWeightGrams: 480.0,
+    materialType: 'Hydrocarbon-Free Food-Grade Natural Jute / Burlap with Polyliner',
+    machineTypeRequired: 'Jute Needle Stitching Machine',
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 7500, // ₹75.00
+    notes: 'Breathable, eco-friendly export sacks compliant with European & US FDA food import norms',
+  },
+  {
+    id: 'spec_t3_box_20kg',
+    tierLevel: 3,
+    code: 'carton_20kg',
+    displayName: '5-Ply Corrugated Cartons (20kg Master Shipper Box)',
+    category: 'tertiary',
+    netCapacityGrams: 20000,
+    tareWeightGrams: 720.0,
+    materialType: 'Virgin Kraft 5-Ply Corrugated Box with 150 GSM Liners (ECT 44)',
+    machineTypeRequired: 'Semi-Automatic Flap Taper & Strapping Machine',
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 6500, // ₹65.00
+    notes: 'Ideal for 20 × 1kg bundles (200 × 100g pouches) with high stacking compression strength',
+  },
+  {
+    id: 'spec_t3_box_25kg',
+    tierLevel: 3,
+    code: 'carton_25kg',
+    displayName: '5-Ply Corrugated Cartons (25kg Master Shipper Box)',
+    category: 'tertiary',
+    netCapacityGrams: 25000,
+    tareWeightGrams: 890.0,
+    materialType: 'Heavy-Duty 5-Ply Corrugated Box (Bursting Strength 16 kg/cm²)',
+    machineTypeRequired: 'Carton Sealer & Poly Strapping Unit',
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 8200, // ₹82.00
+    notes: 'Master export shipper box designed for 20ft/40ft shipping container stuffing (FCL palletized)',
+  },
+  {
+    id: 'spec_t3_mixed_assorted',
+    tierLevel: 3,
+    code: 'shipper_mixed_assorted',
+    displayName: 'Institutional Multi-SKU Assorted Shipper Box',
+    category: 'tertiary',
+    netCapacityGrams: 20000,
+    tareWeightGrams: 850.0,
+    materialType: 'Heavy 5-Ply Corrugated Box with Custom Internal Dividers',
+    machineTypeRequired: 'Manual Staging & Industrial Tape Sealing',
+    isExportCompliant: true,
+    isActive: true,
+    costPaisePerUnit: 9000, // ₹90.00
+    notes: 'Custom assorted carton containing mixed spices (e.g., 5kg Haldi + 5kg Mirch + 5kg Dhana + 5kg Jeera) for luxury hotels & institutions',
+  },
+];
+
+export const initialMandiSpotRates: MandiSpotRateRecord[] = [
+  {
+    id: 'mandi_gnt_01',
+    date: '2026-10-13',
+    spiceName: 'Chilli',
+    mandiLocation: 'Guntur Mandi',
+    grade: 'Teja S17 Stemless (Premium Export Grade)',
+    spotRatePerKgRupees: 220,
+    dailyChangeRupees: 3,
+    arrivalBags: 45000,
+    reportedBy: 'Jayesh Patel (Procurement)',
+    notes: 'Strong demand from overseas export houses; arrivals steady',
+  },
+  {
+    id: 'mandi_gdl_01',
+    date: '2026-10-13',
+    spiceName: 'Chilli',
+    mandiLocation: 'Gondal Yard',
+    grade: 'Reshamapatti Clean Medium',
+    spotRatePerKgRupees: 215,
+    dailyChangeRupees: -2,
+    arrivalBags: 18000,
+    reportedBy: 'Jayesh Patel (Procurement)',
+    notes: 'Good domestic supply from Saurashtra region',
+  },
+  {
+    id: 'mandi_sng_01',
+    date: '2026-10-13',
+    spiceName: 'Turmeric',
+    mandiLocation: 'Sangli Yard',
+    grade: 'Rajapore Whole Fingers (High Curcumin >3.8%)',
+    spotRatePerKgRupees: 165,
+    dailyChangeRupees: 4,
+    arrivalBags: 12000,
+    reportedBy: 'Jayesh Patel (Procurement)',
+    notes: 'Curcumin-rich crop holding firm prices',
+  },
+  {
+    id: 'mandi_nzb_01',
+    date: '2026-10-13',
+    spiceName: 'Turmeric',
+    mandiLocation: 'Nizamabad Yard',
+    grade: 'Standard Commercial Grade (Curcumin 2.8%)',
+    spotRatePerKgRupees: 160,
+    dailyChangeRupees: 1,
+    arrivalBags: 22000,
+    reportedBy: 'Jayesh Patel (Procurement)',
+    notes: 'Solid base material for budget retail sachet blends',
+  },
+  {
+    id: 'mandi_ram_01',
+    date: '2026-10-13',
+    spiceName: 'Coriander',
+    mandiLocation: 'Ramganj Mandi',
+    grade: 'Badami Whole Coriander (Agmark Quality)',
+    spotRatePerKgRupees: 118,
+    dailyChangeRupees: -1,
+    arrivalBags: 32000,
+    reportedBy: 'Jayesh Patel (Procurement)',
+    notes: 'Heavy arrivals from Rajasthan belt; pricing favorable for bulk procurement',
+  },
+  {
+    id: 'mandi_unj_01',
+    date: '2026-10-13',
+    spiceName: 'Cumin',
+    mandiLocation: 'Unjha Mandi',
+    grade: 'Machine Clean Jeera (99.5% Purity)',
+    spotRatePerKgRupees: 285,
+    dailyChangeRupees: 5,
+    arrivalBags: 28000,
+    reportedBy: 'Jayesh Patel (Procurement)',
+    notes: 'Benchmark APMC rate; high European inquiry',
+  },
+];
+
+export const initialDailyTodos: DailyTodoItem[] = [
+  // Super Admin
+  {
+    id: 'todo_adm_01',
+    role: 'owner',
+    title: 'Review executive P&L and monthly EBITDA margins',
+    description: 'Check September vs October revenue growth and per-kg OPEX realization',
+    priority: 'high',
+    dueDate: '2026-10-13',
+    isCompleted: false,
+    actionModule: 'dashboard',
+  },
+  {
+    id: 'todo_adm_02',
+    role: 'owner',
+    title: 'Approve new 35kg Export Jute Sack packaging spec',
+    description: 'Requested by Gulf buyers for Ramadan institutional shipments',
+    priority: 'normal',
+    dueDate: '2026-10-14',
+    isCompleted: false,
+    actionModule: 'inventory',
+  },
+  // Sales
+  {
+    id: 'todo_sls_01',
+    role: 'salesman',
+    title: 'Follow up on 2-Container Export Order for Dubai Buyer',
+    description: 'Verify 30% advance deposit with Finance before releasing production job',
+    priority: 'urgent',
+    dueDate: '2026-10-13',
+    isCompleted: false,
+    actionModule: 'invoices',
+  },
+  {
+    id: 'todo_sls_02',
+    role: 'salesman',
+    title: 'Calculate 60/40 blended quote for Avenue Supermarts',
+    description: 'Blend existing Sangli stock with current Gondal spot rates',
+    priority: 'high',
+    dueDate: '2026-10-13',
+    isCompleted: false,
+    actionModule: 'invoices',
+  },
+  // Procurement
+  {
+    id: 'todo_prc_01',
+    role: 'procurement',
+    title: 'Record morning Mandi spot rates from Unjha & Guntur yards',
+    description: 'Input spot rates into ERP to calibrate blended quoting costs',
+    priority: 'urgent',
+    dueDate: '2026-10-13',
+    isCompleted: false,
+    actionModule: 'pos',
+  },
+  {
+    id: 'todo_prc_02',
+    role: 'procurement',
+    title: 'Issue Spot PO for 14,400 kg deficit whole spices',
+    description: 'Cover container export shortfall with Shree Balaji Spice Mills',
+    priority: 'high',
+    dueDate: '2026-10-14',
+    isCompleted: false,
+    actionModule: 'pos',
+  },
+  // Store Keeper
+  {
+    id: 'todo_str_01',
+    role: 'store_keeper',
+    title: 'Inward GRN for GNT-TEJA-332 whole chilli arrival',
+    description: 'Inspect moisture (<10%) and issue GRN entry to inventory ledger',
+    priority: 'urgent',
+    dueDate: '2026-10-13',
+    isCompleted: false,
+    actionModule: 'inventory',
+  },
+  {
+    id: 'todo_str_02',
+    role: 'store_keeper',
+    title: 'Stage 25kg PP bags for dispatch vehicle loading',
+    description: 'Generate gate pass for Sister Firm Surat CFA truck',
+    priority: 'high',
+    dueDate: '2026-10-13',
+    isCompleted: false,
+    actionModule: 'inventory',
+  },
+  // Factory Floor Supervisor
+  {
+    id: 'todo_flr_01',
+    role: 'supervisor',
+    title: 'Fulfill JOB-2026-10-001 Tier 1 Turmeric pouch quota (2,500 units)',
+    description: 'Run morning shift on Auger Filler #1; target fill 100g ± 0.5g',
+    priority: 'urgent',
+    dueDate: '2026-10-13',
+    isCompleted: false,
+    actionModule: 'batches',
+  },
+  {
+    id: 'todo_flr_02',
+    role: 'supervisor',
+    title: 'Submit Day-End Shift Report & Film scrap wastage log',
+    description: 'Record morning + evening shift units packed and operator hours',
+    priority: 'high',
+    dueDate: '2026-10-13',
+    isCompleted: false,
+    actionModule: 'batches',
+  },
+  // Finance & Accounts
+  {
+    id: 'todo_fnc_01',
+    role: 'accountant',
+    title: 'Reconcile advance payment UTR for Dubai export shipment',
+    description: 'Confirm $7,500 inward remittance credit with HDFC Bank',
+    priority: 'urgent',
+    dueDate: '2026-10-13',
+    isCompleted: false,
+    actionModule: 'invoices',
+  },
+  {
+    id: 'todo_fnc_02',
+    role: 'accountant',
+    title: 'Verify GSTR-2B Claimable vs Ineligible ITC for machinery bills',
+    description: 'Ensure full 18% credit booked for Rajkot Packmach spare parts',
+    priority: 'normal',
+    dueDate: '2026-10-14',
+    isCompleted: false,
+    actionModule: 'expenses',
+  },
+  // Marketing & Ads
+  {
+    id: 'todo_mkt_01',
+    role: 'marketing',
+    title: 'Review ROAS on Meta & Blinkit Festive Quick-Commerce Ads',
+    description: 'Check cost per conversion for ₹10 trial packs and 500g pouches',
+    priority: 'high',
+    dueDate: '2026-10-13',
+    isCompleted: false,
+    actionModule: 'advertising',
+  },
+  {
+    id: 'todo_mkt_02',
+    role: 'marketing',
+    title: 'Audit Amazon & Blinkit marketplace settlement fees & TCS deductions',
+    description: 'Bridge referral fees and reverse logistics RTO with Finance',
+    priority: 'normal',
+    dueDate: '2026-10-14',
+    isCompleted: false,
+    actionModule: 'advertising',
+  },
+];
+
+export const initialDayEndReports: DayEndReport[] = [
+  {
+    id: 'rpt_de_01',
+    date: '2026-10-12',
+    shift: 'general',
+    role: 'supervisor',
+    submittedBy: 'Pravin Solanki (Plant Supervisor)',
+    primaryMetricLabel: 'Total Kilograms Packed Today',
+    primaryMetricValue: '4,410 kg (9,000 pouches + 50 bulk sacks)',
+    summaryNotes: 'Auger Filler #1 operated without breakdown for 7.5 hours. Completed 100g Haldi quota and staged 50 sacks of 50kg Coriander.',
+    blockersOrWastage: 'Spill scrap: 3.4 kg. Film reject: 14 pouches during morning tension calibration.',
+    tasksCompletedCount: 4,
+    timestamp: '2026-10-12T18:30:00.000Z',
+  },
+  {
+    id: 'rpt_de_02',
+    date: '2026-10-12',
+    shift: 'general',
+    role: 'store_keeper',
+    submittedBy: 'Vikram Desai (Store Keeper)',
+    primaryMetricLabel: 'Inward RM Received & Staged',
+    primaryMetricValue: '15,000 kg whole spices inward; 2 delivery trucks cleared',
+    summaryNotes: 'Completed GRN for Ramganj coriander shipment. Staged 25kg PP outer shippers for morning distribution to Ahmedabad depot.',
+    blockersOrWastage: 'Zero transit damage on inward sacks.',
+    tasksCompletedCount: 3,
+    timestamp: '2026-10-12T19:00:00.000Z',
+  },
+  {
+    id: 'rpt_de_03',
+    date: '2026-10-12',
+    shift: 'general',
+    role: 'accountant',
+    submittedBy: 'Ramesh Patel (Head of Finance)',
+    primaryMetricLabel: 'Daily Collections & Invoices Issued',
+    primaryMetricValue: '₹22,94,631.00 invoiced; ₹20,87,500.00 collected',
+    summaryNotes: 'Export commercial invoice cleared under LUT Rule 96A. Verified 100% advance receipt from Al-Madina Spice Trading LLC.',
+    blockersOrWastage: 'None. All bank accounts reconciled.',
+    tasksCompletedCount: 5,
+    timestamp: '2026-10-12T19:15:00.000Z',
+  },
+];
 
 
 // In-Memory & LocalStorage wrapper
@@ -4184,6 +4857,260 @@ class StorageEngine {
     };
   }
 
+  // --- PACKAGING TIER SPECS (TIER 1, 2, 3 CRUD) ---
+  getPackagingSpecs(): PackagingTierSpec[] {
+    return this.get<PackagingTierSpec[]>(STORAGE_KEYS.PACKAGING_SPECS, initialPackagingSpecs);
+  }
+
+  savePackagingSpecs(specs: PackagingTierSpec[]): void {
+    this.set(STORAGE_KEYS.PACKAGING_SPECS, specs);
+  }
+
+  addPackagingSpec(spec: PackagingTierSpec): void {
+    const list = this.getPackagingSpecs();
+    this.savePackagingSpecs([...list, spec]);
+    this.logOutbox('create', 'asset', `Added Packaging Tier ${spec.tierLevel} Spec: ${spec.displayName}`);
+  }
+
+  updatePackagingSpec(spec: PackagingTierSpec): void {
+    const list = this.getPackagingSpecs().map((s) => (s.id === spec.id ? spec : s));
+    this.savePackagingSpecs(list);
+    this.logOutbox('update', 'asset', `Updated Packaging Spec: ${spec.displayName}`);
+  }
+
+  deletePackagingSpec(id: string): void {
+    const list = this.getPackagingSpecs().filter((s) => s.id !== id);
+    this.savePackagingSpecs(list);
+    this.logOutbox('void', 'asset', `Archived Packaging Spec ${id}`);
+  }
+
+  resetPackagingSpecs(): void {
+    this.savePackagingSpecs(initialPackagingSpecs);
+  }
+
+  // --- DAILY MANDI SPOT RATES & BLENDED COST RATIO ENGINE ---
+  getMandiSpotRates(): MandiSpotRateRecord[] {
+    return this.get<MandiSpotRateRecord[]>(STORAGE_KEYS.MANDI_SPOT_RATES, initialMandiSpotRates);
+  }
+
+  saveMandiSpotRates(rates: MandiSpotRateRecord[]): void {
+    this.set(STORAGE_KEYS.MANDI_SPOT_RATES, rates);
+  }
+
+  addMandiSpotRate(rate: MandiSpotRateRecord): void {
+    const list = this.getMandiSpotRates();
+    this.saveMandiSpotRates([rate, ...list]);
+    this.logOutbox('create', 'bill', `Recorded Mandi Spot Rate for ${rate.spiceName} @ ₹${rate.spotRatePerKgRupees}/kg`);
+  }
+
+  calculateBlendedCost(params: {
+    spiceName: string;
+    totalRequiredKg: number;
+    stockOnHandKg: number;
+    stockHistoricalCostRupees: number;
+    spotMarketRateRupees: number;
+    millingShrinkagePct?: number; // default 2%
+    packagingCostPerKg?: number;  // default ₹8
+    opexAllocationPerKg?: number; // default ₹12
+    targetProfitMarginPct?: number; // default 15%
+    exchangeRateUsd?: number;     // default 83.5
+  }): BlendedCostCalculation {
+    const {
+      spiceName,
+      totalRequiredKg,
+      stockOnHandKg,
+      stockHistoricalCostRupees,
+      spotMarketRateRupees,
+      millingShrinkagePct = 2.0,
+      packagingCostPerKg = 8.0,
+      opexAllocationPerKg = 12.0,
+      targetProfitMarginPct = 15.0,
+      exchangeRateUsd = 83.5,
+    } = params;
+
+    const actualStockKg = Math.min(totalRequiredKg, Math.max(0, stockOnHandKg));
+    const deficitKg = Math.max(0, totalRequiredKg - actualStockKg);
+
+    // Weighted average raw cost
+    const blendedRawCostPerKg =
+      totalRequiredKg > 0
+        ? (actualStockKg * stockHistoricalCostRupees + deficitKg * spotMarketRateRupees) / totalRequiredKg
+        : spotMarketRateRupees;
+
+    // After grinding / milling shrinkage adjustment
+    const shrinkageRatio = 1 - millingShrinkagePct / 100;
+    const milledCostPerKg = shrinkageRatio > 0 ? blendedRawCostPerKg / shrinkageRatio : blendedRawCostPerKg;
+
+    // Total factory landed cost per kg
+    const totalLandedCostPerKg = milledCostPerKg + packagingCostPerKg + opexAllocationPerKg;
+
+    // Quoted price factoring in margin
+    const marginRatio = 1 - targetProfitMarginPct / 100;
+    const recommendedQuotedPricePerKg = marginRatio > 0 ? totalLandedCostPerKg / marginRatio : totalLandedCostPerKg * 1.15;
+    const recommendedQuotedPriceUSD = exchangeRateUsd > 0 ? recommendedQuotedPricePerKg / exchangeRateUsd : 0;
+
+    return {
+      spiceName,
+      totalRequiredKg,
+      stockOnHandKg: actualStockKg,
+      stockHistoricalCostRupees,
+      deficitToProcureKg: deficitKg,
+      spotMarketRateRupees,
+      blendedRawCostPerKg: Math.round(blendedRawCostPerKg * 100) / 100,
+      millingShrinkagePct,
+      milledCostPerKg: Math.round(milledCostPerKg * 100) / 100,
+      packagingCostPerKg,
+      opexAllocationPerKg,
+      totalLandedCostPerKg: Math.round(totalLandedCostPerKg * 100) / 100,
+      targetProfitMarginPct,
+      recommendedQuotedPricePerKg: Math.round(recommendedQuotedPricePerKg * 100) / 100,
+      recommendedQuotedPriceUSD: Math.round(recommendedQuotedPriceUSD * 100) / 100,
+    };
+  }
+
+  // --- UNIVERSAL DEPARTMENTAL TO-DO STACK ---
+  getDailyTodos(role?: UserRole): DailyTodoItem[] {
+    const list = this.get<DailyTodoItem[]>(STORAGE_KEYS.DAILY_TODOS, initialDailyTodos);
+    if (role && role !== 'owner') {
+      return list.filter((t) => t.role === role);
+    }
+    return list;
+  }
+
+  saveDailyTodos(todos: DailyTodoItem[]): void {
+    this.set(STORAGE_KEYS.DAILY_TODOS, todos);
+  }
+
+  addDailyTodo(todo: DailyTodoItem): void {
+    const list = this.get<DailyTodoItem[]>(STORAGE_KEYS.DAILY_TODOS, initialDailyTodos);
+    this.saveDailyTodos([todo, ...list]);
+  }
+
+  toggleDailyTodo(id: string): void {
+    const list = this.get<DailyTodoItem[]>(STORAGE_KEYS.DAILY_TODOS, initialDailyTodos);
+    const updated = list.map((t) => {
+      if (t.id === id) {
+        return {
+          ...t,
+          isCompleted: !t.isCompleted,
+          completedAt: !t.isCompleted ? new Date().toISOString() : undefined,
+        };
+      }
+      return t;
+    });
+    this.saveDailyTodos(updated);
+  }
+
+  deleteDailyTodo(id: string): void {
+    const list = this.get<DailyTodoItem[]>(STORAGE_KEYS.DAILY_TODOS, initialDailyTodos);
+    this.saveDailyTodos(list.filter((t) => t.id !== id));
+  }
+
+  // --- DAY-END REPORT SUBMISSIONS ---
+  getDayEndReports(role?: UserRole): DayEndReport[] {
+    const list = this.get<DayEndReport[]>(STORAGE_KEYS.DAY_END_REPORTS, initialDayEndReports);
+    if (role && role !== 'owner') {
+      return list.filter((r) => r.role === role);
+    }
+    return list;
+  }
+
+  saveDayEndReports(reports: DayEndReport[]): void {
+    this.set(STORAGE_KEYS.DAY_END_REPORTS, reports);
+  }
+
+  submitDayEndReport(report: DayEndReport): void {
+    const list = this.getDayEndReports();
+    this.saveDayEndReports([report, ...list]);
+    this.logOutbox('create', 'bill', `Submitted Day-End Report for ${report.role} (${report.primaryMetricValue})`);
+  }
+
+  // --- SYSTEM USERS & SUPER ADMIN RBAC CRUD ---
+  getAllSystemUsers(): SystemUserCredential[] {
+    return this.get<SystemUserCredential[]>(STORAGE_KEYS.SYSTEM_USERS, PREDEFINED_USERS);
+  }
+
+  saveSystemUsers(users: SystemUserCredential[]): void {
+    this.set(STORAGE_KEYS.SYSTEM_USERS, users);
+  }
+
+  addSystemUser(cred: SystemUserCredential): void {
+    const list = this.getAllSystemUsers();
+    this.saveSystemUsers([...list, cred]);
+    this.logOutbox('create', 'employee', `Created enterprise account for ${cred.email} (${cred.user.role})`);
+  }
+
+  updateSystemUserRole(email: string, newRole: UserRole): boolean {
+    const list = this.getAllSystemUsers();
+    let found = false;
+    const updated = list.map((u) => {
+      if (u.email.toLowerCase() === email.toLowerCase()) {
+        found = true;
+        return {
+          ...u,
+          user: { ...u.user, role: newRole },
+        };
+      }
+      return u;
+    });
+    if (found) {
+      this.saveSystemUsers(updated);
+      this.logOutbox('update', 'employee', `Updated role of ${email} to ${newRole}`);
+    }
+    return found;
+  }
+
+  deleteSystemUser(email: string): boolean {
+    const list = this.getAllSystemUsers();
+    const filtered = list.filter((u) => u.email.toLowerCase() !== email.toLowerCase());
+    if (filtered.length < list.length) {
+      this.saveSystemUsers(filtered);
+      this.logOutbox('void', 'employee', `Deleted enterprise account for ${email}`);
+      return true;
+    }
+    return false;
+  }
+
+  resetUserPassword(email: string, newPass: string): boolean {
+    const list = this.getAllSystemUsers();
+    let found = false;
+    const updated = list.map((u) => {
+      if (u.email.toLowerCase() === email.toLowerCase()) {
+        found = true;
+        return { ...u, password: newPass };
+      }
+      return u;
+    });
+    if (found) {
+      this.saveSystemUsers(updated);
+      this.logOutbox('update', 'employee', `Reset password for ${email}`);
+    }
+    return found;
+  }
+
+  // Super Admin 1-Click Role Teleportation
+  teleportToRole(targetRole: UserRole): AuthUser {
+    const users = this.getAllSystemUsers();
+    const matching = users.find((u) => u.user.role === targetRole);
+    if (matching) {
+      this.set(STORAGE_KEYS.AUTH_USER, matching.user);
+      this.setActiveRole(targetRole);
+      return matching.user;
+    }
+    // Fallback virtual user for role
+    const virtualUser: AuthUser = {
+      id: `usr_teleport_${targetRole}`,
+      email: `${targetRole}@adalajfoods.com`,
+      name: `Teleport: ${targetRole.toUpperCase()}`,
+      role: targetRole,
+      department: `${targetRole} Department`,
+      lastLoginAt: new Date().toISOString(),
+    };
+    this.set(STORAGE_KEYS.AUTH_USER, virtualUser);
+    this.setActiveRole(targetRole);
+    return virtualUser;
+  }
+
   // Reset starter template to initial state
   resetStarterTemplate(): void {
     this.set(STORAGE_KEYS.ENTITY, initialEntity);
@@ -4195,6 +5122,11 @@ class StorageEngine {
     this.set(STORAGE_KEYS.SALES_INVOICES, initialSalesInvoices);
     this.set(STORAGE_KEYS.SALES_QUOTATIONS, initialSalesQuotations);
     this.set(STORAGE_KEYS.PACKING_FLOOR_JOBS, initialPackingFloorJobs);
+    this.set(STORAGE_KEYS.PACKAGING_SPECS, initialPackagingSpecs);
+    this.set(STORAGE_KEYS.MANDI_SPOT_RATES, initialMandiSpotRates);
+    this.set(STORAGE_KEYS.DAILY_TODOS, initialDailyTodos);
+    this.set(STORAGE_KEYS.DAY_END_REPORTS, initialDayEndReports);
+    this.set(STORAGE_KEYS.SYSTEM_USERS, PREDEFINED_USERS);
     this.set(STORAGE_KEYS.VOIDED_INVOICES, initialVoidedInvoices);
     this.set(STORAGE_KEYS.ITEMS, initialItems);
     this.set(STORAGE_KEYS.LOTS, initialLots);
@@ -4229,6 +5161,11 @@ class StorageEngine {
         salesInvoices: this.getSalesInvoices(),
         salesQuotations: this.getSalesQuotations(),
         packingFloorJobs: this.getPackingFloorJobs(),
+        packagingSpecs: this.getPackagingSpecs(),
+        mandiSpotRates: this.getMandiSpotRates(),
+        dailyTodos: this.getDailyTodos(),
+        dayEndReports: this.getDayEndReports(),
+        systemUsers: this.getAllSystemUsers(),
         voidedInvoices: this.getVoidedInvoicesAudit(),
         items: this.getItems(),
         lots: this.getLots(),
@@ -4249,7 +5186,7 @@ class StorageEngine {
         interFirmTransfers: this.getInterFirmTransfers(),
         exportShipments: this.getExportShipments(),
         exportedAt: new Date().toISOString(),
-        version: '1.4.0',
+        version: '1.5.0',
       },
       null,
       2
@@ -4269,6 +5206,11 @@ class StorageEngine {
         if (data.salesInvoices) this.set(STORAGE_KEYS.SALES_INVOICES, data.salesInvoices);
         if (data.salesQuotations) this.set(STORAGE_KEYS.SALES_QUOTATIONS, data.salesQuotations);
         if (data.packingFloorJobs) this.set(STORAGE_KEYS.PACKING_FLOOR_JOBS, data.packingFloorJobs);
+        if (data.packagingSpecs) this.set(STORAGE_KEYS.PACKAGING_SPECS, data.packagingSpecs);
+        if (data.mandiSpotRates) this.set(STORAGE_KEYS.MANDI_SPOT_RATES, data.mandiSpotRates);
+        if (data.dailyTodos) this.set(STORAGE_KEYS.DAILY_TODOS, data.dailyTodos);
+        if (data.dayEndReports) this.set(STORAGE_KEYS.DAY_END_REPORTS, data.dayEndReports);
+        if (data.systemUsers) this.set(STORAGE_KEYS.SYSTEM_USERS, data.systemUsers);
         if (data.voidedInvoices) this.set(STORAGE_KEYS.VOIDED_INVOICES, data.voidedInvoices);
         if (data.items) this.set(STORAGE_KEYS.ITEMS, data.items);
         if (data.lots) this.set(STORAGE_KEYS.LOTS, data.lots);

@@ -20,14 +20,48 @@ import { AdvertisingModule } from './components/modules/AdvertisingModule';
 import { LicencesModule } from './components/modules/LicencesModule';
 import { DataBackupModule } from './components/modules/DataBackupModule';
 import { InvoicesAndQuotationsModule } from './components/modules/InvoicesAndQuotationsModule';
+import { SuperAdminCockpit } from './components/portals/SuperAdminCockpit';
+import { SalesPortal } from './components/portals/SalesPortal';
+import { ProcurementPortal } from './components/portals/ProcurementPortal';
+import { StorePortal } from './components/portals/StorePortal';
+import { FactoryFloorPortal } from './components/portals/FactoryFloorPortal';
+import { FinancePortal } from './components/portals/FinancePortal';
+import { MarketingPortal } from './components/portals/MarketingPortal';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { db } from './lib/storage';
-import { AuthUser, ROLE_PERMISSIONS } from './types';
+import { AuthUser, UserRole, ROLE_PERMISSIONS } from './types';
+
+const getDefaultModuleForRole = (role: UserRole): string => {
+  switch (role) {
+    case 'owner':
+      return 'portal_admin';
+    case 'salesman':
+      return 'portal_sales';
+    case 'procurement':
+      return 'portal_procurement';
+    case 'store_keeper':
+      return 'portal_store';
+    case 'supervisor':
+      return 'portal_floor';
+    case 'accountant':
+      return 'portal_finance';
+    case 'marketing':
+      return 'portal_marketing';
+    case 'ca_auditor':
+    default:
+      return 'dashboard';
+  }
+};
 
 function AppContent() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => db.getAuthUser());
-  const [activeModule, setActiveModule] = useState<string>('dashboard');
+  const [activeModule, setActiveModule] = useState<string>(() => {
+    const user = db.getAuthUser();
+    return user ? getDefaultModuleForRole(user.role) : 'dashboard';
+  });
   const [showQuickExpense, setShowQuickExpense] = useState<boolean>(false);
+  const [teleportActive, setTeleportActive] = useState<boolean>(false);
+  const [originalAdminUser, setOriginalAdminUser] = useState<AuthUser | null>(null);
 
   // Enforce RBAC guard on activeModule
   useEffect(() => {
@@ -43,12 +77,32 @@ function AppContent() {
       <LoginScreen
         onLoginSuccess={(user) => {
           setCurrentUser(user);
-          const allowed = ROLE_PERMISSIONS[user.role]?.allowedModules || ['dashboard'];
-          setActiveModule(allowed[0] || 'dashboard');
+          const defaultMod = getDefaultModuleForRole(user.role);
+          setActiveModule(defaultMod);
         }}
       />
     );
   }
+
+  // Super Admin 1-Click Role Teleportation
+  const handleTeleportToRole = (targetRole: UserRole) => {
+    if (currentUser.role === 'owner' && !originalAdminUser) {
+      setOriginalAdminUser(currentUser);
+    }
+    const switchedUser = db.teleportToRole(targetRole);
+    setCurrentUser(switchedUser);
+    setTeleportActive(targetRole !== 'owner');
+    const targetMod = getDefaultModuleForRole(targetRole);
+    setActiveModule(targetMod);
+  };
+
+  const handleReturnToAdmin = () => {
+    const adminUser = originalAdminUser || db.teleportToRole('owner');
+    db.setAuthUser(adminUser);
+    setCurrentUser(adminUser);
+    setTeleportActive(false);
+    setActiveModule('portal_admin');
+  };
 
   const handleOpenQuickAdd = () => {
     setActiveModule('expenses');
@@ -58,6 +112,8 @@ function AppContent() {
   const handleLogout = () => {
     db.logout();
     setCurrentUser(null);
+    setTeleportActive(false);
+    setOriginalAdminUser(null);
   };
 
   const renderModule = () => {
@@ -81,6 +137,59 @@ function AppContent() {
     }
 
     switch (activeModule) {
+      // --- DEDICATED ROLE PORTALS ---
+      case 'portal_admin':
+        return (
+          <SuperAdminCockpit
+            currentUser={currentUser}
+            onTeleportToRole={handleTeleportToRole}
+            onNavigateModule={(mod) => setActiveModule(mod)}
+          />
+        );
+      case 'portal_sales':
+        return (
+          <SalesPortal
+            currentUser={currentUser}
+            onNavigateModule={(mod) => setActiveModule(mod)}
+          />
+        );
+      case 'portal_procurement':
+        return (
+          <ProcurementPortal
+            currentUser={currentUser}
+            onNavigateModule={(mod) => setActiveModule(mod)}
+          />
+        );
+      case 'portal_store':
+        return (
+          <StorePortal
+            currentUser={currentUser}
+            onNavigateModule={(mod) => setActiveModule(mod)}
+          />
+        );
+      case 'portal_floor':
+        return (
+          <FactoryFloorPortal
+            currentUser={currentUser}
+            onNavigateModule={(mod) => setActiveModule(mod)}
+          />
+        );
+      case 'portal_finance':
+        return (
+          <FinancePortal
+            currentUser={currentUser}
+            onNavigateModule={(mod) => setActiveModule(mod)}
+          />
+        );
+      case 'portal_marketing':
+        return (
+          <MarketingPortal
+            currentUser={currentUser}
+            onNavigateModule={(mod) => setActiveModule(mod)}
+          />
+        );
+
+      // --- STANDARD MODULES ---
       case 'dashboard':
         return (
           <DashboardWhereIsMyMoney
@@ -145,6 +254,27 @@ function AppContent() {
       }}
       onOpenQuickAdd={handleOpenQuickAdd}
     >
+      {/* Floating Teleport Indicator when Super Admin is inspecting an anonymized portal */}
+      {teleportActive && (
+        <div className="mb-4 p-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 text-xs font-black flex flex-wrap items-center justify-between gap-2 shadow-lg animate-fade-in border border-amber-300">
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded-lg bg-black text-amber-300 text-[10px] uppercase font-mono tracking-wider">
+              Teleport Mode Active
+            </span>
+            <span>
+              Inspecting as <strong>{currentUser.name}</strong> ({currentUser.role.toUpperCase()})
+            </span>
+          </div>
+          <button
+            onClick={handleReturnToAdmin}
+            className="px-3.5 py-1 rounded-xl bg-black hover:bg-slate-900 text-amber-300 font-bold transition-all shadow cursor-pointer flex items-center gap-1.5"
+          >
+            <span>Return to Super Admin Cockpit</span>
+            <span>👑</span>
+          </button>
+        </div>
+      )}
+
       {renderModule()}
     </AppLayout>
   );

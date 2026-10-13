@@ -16,11 +16,5 @@
       "binding": "RATE_LIMIT_KV",
       "id": "c152967af3f94a80949fac6b147eb787"
     }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "RECEIPTS_BUCKET",
-      "bucket_name": "adalaj-erp-receipts"
-    }
   ]
 }
