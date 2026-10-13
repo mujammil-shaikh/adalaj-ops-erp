@@ -174,11 +174,49 @@ export const DataBackupModule: React.FC = () => {
           </p>
           <button
             onClick={handleDownloadBackup}
-            className="w-full py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm"
+            className="w-full py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm cursor-pointer"
           >
             <Download className="w-4 h-4" />
             <span>Download Full JSON Database</span>
           </button>
+        </div>
+
+        {/* Restore / Import Database JSON */}
+        <div className="p-4 rounded-xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 space-y-3 shadow-sm">
+          <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-sm">
+            <Upload className="w-5 h-5" />
+            <span>Restore / Import JSON Backup</span>
+          </div>
+          <p className="text-xs text-slate-600 dark:text-slate-300">
+            Restore state from an encrypted JSON snapshot. Validates schema and integrity before updating local repository.
+          </p>
+          <label className="w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm cursor-pointer">
+            <Upload className="w-4 h-4" />
+            <span>Select JSON File to Restore</span>
+            <input
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                  const content = event.target?.result as string;
+                  if (content) {
+                    const ok = db.importFullDatabaseJSON(content);
+                    if (ok) {
+                      setStatusMessage(`Database successfully restored from ${file.name}! Reloading...`);
+                      setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                      setStatusMessage('Error: Failed to restore backup. Invalid JSON schema structure.');
+                    }
+                  }
+                };
+                reader.readAsText(file);
+              }}
+            />
+          </label>
         </div>
 
         {/* Starter Template Re-seed */}
@@ -192,7 +230,7 @@ export const DataBackupModule: React.FC = () => {
           </p>
           <button
             onClick={handleResetTemplate}
-            className="w-full py-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-rose-700 dark:text-rose-300 border border-slate-300 dark:border-slate-700 font-bold text-xs transition flex items-center justify-center gap-2"
+            className="w-full py-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-rose-700 dark:text-rose-300 border border-slate-300 dark:border-slate-700 font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
             <span>Re-Apply Starter Template</span>

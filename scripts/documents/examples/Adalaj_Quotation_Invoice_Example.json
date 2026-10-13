@@ -1,0 +1,111 @@
+{
+  "company": {
+    "legalName": "DEMO ENTITY — REPLACE WITH VERIFIED LEGAL NAME",
+    "displayName": "Company Display Name",
+    "tradeName": "Trading / Brand Name (optional)",
+    "addressLines": ["Registered address line 1", "Registered address line 2"],
+    "city": "City",
+    "stateOrProvince": "State / Province",
+    "postalCode": "POSTCODE",
+    "country": "India",
+    "phone": "",
+    "email": "",
+    "website": "",
+    "gstin": "",
+    "pan": "",
+    "cin": "",
+    "iec": "",
+    "currencyCode": "INR",
+    "locale": "en-IN",
+    "logoUrl": "/assets/company-logo.svg",
+    "signatureUrl": "",
+    "stampUrl": "",
+    "authorisedSignatoryName": "Authorised signatory (configure)",
+    "registrations": [
+      {
+        "label": "Certificate / Registration",
+        "value": "",
+        "displayOnDocument": false,
+        "validUntil": ""
+      }
+    ],
+    "paymentDetails": [
+      { "label": "Bank name", "value": "Configure verified bank details" },
+      { "label": "Account / UPI", "value": "Configure verified payment details" }
+    ],
+    "footerText": "Template preview only. Replace demo data and have your accountant/CA approve the document and tax configuration before production use."
+  },
+  "customer": {
+    "legalName": "DEMO CUSTOMER — NOT A REAL CUSTOMER",
+    "tradeName": "Customer / Institution Name",
+    "addressLines": ["Billing address line 1", "Billing address line 2"],
+    "city": "Customer city",
+    "stateOrProvince": "Customer state",
+    "postalCode": "POSTCODE",
+    "country": "India",
+    "contactName": "Accounts department",
+    "phone": "",
+    "email": "",
+    "identifiers": [
+      { "label": "GSTIN", "value": "" },
+      { "label": "Customer code", "value": "DEMO-CUSTOMER" }
+    ]
+  },
+  "document": {
+    "type": "quotation",
+    "status": "draft",
+    "documentNumber": "DRAFT-QTN-EXAMPLE-0001",
+    "issueDate": "2026-10-13",
+    "validUntil": "2026-10-27",
+    "dueDate": "",
+    "currencyCode": "INR",
+    "currencyMinorDigits": 2,
+    "locale": "en-IN",
+    "language": "en",
+    "customerPurchaseOrderNumber": "",
+    "salesOrderNumber": "",
+    "placeOfSupply": "Configure after validating transaction details",
+    "shipmentReference": "",
+    "incoterms": "",
+    "paymentTermsLabel": "Example only — configure approved payment terms",
+    "promisedFulfilmentDate": "2026-10-20",
+    "lines": [
+      {
+        "sku": "DEMO-SKU-100G",
+        "description": "Example spice product — 100g branded pack",
+        "hsnSac": "",
+        "quantity": "20",
+        "unit": "pack",
+        "unitPriceMinor": 45000,
+        "discountBps": 500,
+        "taxTreatmentLabel": "Tax components are illustrative and must be confirmed",
+        "taxes": [
+          { "label": "CGST (example)", "rateBps": 250 },
+          { "label": "SGST (example)", "rateBps": 250 }
+        ],
+        "packSize": "100g",
+        "packagingDescription": "Printed pouch",
+        "batchNumber": "",
+        "fulfilmentNote": "Example delivery note only"
+      }
+    ],
+    "charges": [],
+    "receiptsAppliedMinor": 0,
+    "creditsAppliedMinor": 0,
+    "withholdingRecognisedMinor": 0,
+    "terms": [
+      "This is a draft quotation only and is not a tax invoice or a guarantee of stock availability.",
+      "Price, taxes, credit terms, credit surcharge, delivery schedule and product specifications are subject to approved commercial configuration.",
+      "The quotation becomes an order only after acceptance and authorised order confirmation.",
+      "Any credit-charge rule must be disclosed in the quotation and approved before issue; it must not be silently added at invoice time."
+    ],
+    "notes": [
+      "All names, prices, tax rates and dates in this example are fictional test data.",
+      "The backend must allocate document numbers and persist the immutable issued snapshot."
+    ],
+    "disclaimer": "DEVELOPMENT TEMPLATE — do not issue to a customer before replacing the demo data and confirming all legal/tax details.",
+    "qrCodeDataUri": "",
+    "qrCaption": "Payment QR (add only verified payment QR content)",
+    "snapshotHash": ""
+  }
+}

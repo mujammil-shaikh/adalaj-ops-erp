@@ -40,7 +40,7 @@ import {
   generateCorporateStampSVG,
   generateDynamicQRCodeSVG,
   ENTITIES,
-} from '../../../scripts/invoice-engine.mjs';
+} from '../../lib/documents/documentEngine';
 
 export const InvoicesAndQuotationsModule: React.FC = () => {
   const { isDark } = useTheme();

@@ -1,6 +1,12 @@
 # Adalaj Packing Ops Hub — Complete Master Build Prompt and Project Specification
 
-*Version 1.1 · 12 October 2026 · Adalaj, Gujarat, India · Single-file source of truth for Google Antigravity + Gemini 3.8 Flash.*
+*Version 2.0 · 13 October 2026 · Adalaj, Gujarat, India · Complete source of truth for Google Antigravity + Gemini 3.8 Flash.*
+
+> **VERSION 2.0 PRIORITY OVERRIDE — READ FIRST**
+> This file retains the complete Version 1.1 specification and appends the Version 2.0 business requirements in Sections 14 and 15. **Section 14 is authoritative and supersedes any conflicting older statement** about one legal entity, single-entity billing, sister-firm downstream sales, invoice/quotation scope, fulfilment/bundling, financial dashboards, login defaults, or implementation phase order. The operating model now contains two legally separate entities (Main Pvt. Ltd. and a sister proprietorship), separate books/GST/configuration, controlled inter-entity stock reconciliation, and an owner-only consolidated management view. Never combine the entities as if they were one legal person.
+>
+> **Security note:** do not embed any password, default admin credential, listed staff email, API key, real GSTIN, PAN, bank account, customer record or live financial value in source code, seed data, screenshots, login hints or this prompt. Bootstrap the first Super Admin through a one-time secure setup flow, require password change/MFA, and then disable bootstrap. Support browser password managers with standard autocomplete attributes, but never save raw passwords in application storage or auto-login just because a URL was opened.
+
 
 ## 0. About this document
 
@@ -20,7 +26,9 @@ This is both the complete requirements document and the master instruction promp
 | 10 | Agentic build guide (Antigravity and Gemini) |
 | 11 | Documents still to be produced (DFD, UML, test plan and others) |
 | 12 | Open questions |
-| 13 | Mandatory completeness addendum: GST, all cost types, payroll/incentives, portals/RBAC, CRUD and responsive PWA acceptance |
+| 13 | Historical Version 1.1 completeness addendum |
+| 14 | Version 2.0 two-entity model, financial intelligence, fulfilment, invoicing, deployment and implementation tracker |
+| 15 | Complete reusable quotation/invoice MJS source and sample JSON |
 
 
 ## EXECUTION PROMPT — READ THIS BEFORE TOUCHING CODE
@@ -42,6 +50,8 @@ You are the lead product engineer, software architect, UI/UX engineer, database 
 9. **Secure by default.** Never expose secrets, weaken authentication, skip server-side authorization, use unsafe SQL, bypass validation, use wildcard credentialed CORS, or disable security checks just to get a green build. Every API mutation must be authenticated, authorized, validated, checked against period locks, idempotent where appropriate and audited on the server.
 10. **Human-controlled production changes.** Work in a branch and use local/development or staging resources first. Do not deploy to production, delete production data/resources, rotate live secrets, change domain/DNS or run destructive migrations without explicit owner approval. Never place real secrets or private employee/customer/financial data in prompts or logs.
 11. **Keep this specification operational.** At each task’s end, update the task tracker, applicable tests, schema/API docs, security evidence and decision records. Create the navigable files under `docs/`. These extracts must not contradict this master document.
+12. **Do not drop listed business costs or defer their data model.** Every business area in this specification belongs in the complete product even if its user-facing module is delivered in a later phase. Build the core data model and relationships with the initial migrations where this avoids data loss or incompatible redesign. Make any later-phase status visible in the tracker; never describe a planned or partial feature as complete.
+13. **Resolve overlapping requirements in favour of completeness and the latest explicit correction.** The owner’s expanded coverage matrix near Part 1 and the binding Mandatory Completeness Addendum in Part 13 clarify earlier summaries. If an older phase table looks narrower, keep the feature in the product scope, capture source data early where required, and implement it in the assigned phase. If wording actually conflicts, document an ADR and ask for owner confirmation before irreversible decisions.
 
 ### Model and reasoning settings
 
@@ -69,13 +79,46 @@ Before coding, return a concise assessment containing the repository inventory, 
 | D3 | Business data and business rules are configurable in the product UI. Core software workflow states may be enums in code. | Confirmed |
 | D4 | V1 is an operations, inventory, costing and cash-flow system that exports clean data to the CA’s accounting software; it does not replace full double-entry accounting or file returns until explicitly approved. | Assumption to confirm |
 | D5 | The ₹10 own-brand roll/strip pouch is outsourced temporarily (estimated two to three months) and should later be brought in-house after the future machine is installed and commissioned. Net weight and which materials the packer supplies remain configurable/open items. | Business context confirmed; details to confirm |
-| D6 | Start with one Indian legal entity and GST context; keep schema entity-scoped so future expansion is possible. Statutory rules are settings with effective dates and require CA confirmation. | Assumption to confirm |
+| D6 | Operate two legally separate entities from the beginning: the Main Pvt. Ltd. company and the sister proprietorship. Every business record is entity-scoped, with separate users/scopes, books, tax settings, inventory ownership, cash/bank, bills and invoices. Consolidated reporting is management-only and must not erase legal separation. | Confirmed in Version 2.0; legal/tax posting choices require CA confirmation |
 | D7 | Existing sales billing software is integrated later by import/API, not required for the foundation release. | Assumption to confirm |
 | D8 | Current production is a **packing run**, not baking/roasting. Do not add baking shrinkage to the default process. Future optional process stages may be configured if the owner confirms a need. | Confirmed correction |
 | D9 | Outsourcing Adalaj’s own-brand packing and doing job work for a customer are separate workflows. Customer-owned materials, if job work is added, must be kept in a separate non-owned/non-valued stock category. | Required distinction |
 | D10 | Current known formats: digitally printed pouches for 100g, 200g and 500g; 1kg, 2kg and 5kg silver-foil pouches with a top sticker; ₹10 roll-fed pouch/strip stock currently sent to a third-party packer. A 50g SKU must be supported, but its current packaging format needs confirmation; the future FFS plan includes 50g. | Latest business description; 50g current format to confirm |
 | D11 | Current in-house equipment includes a vertical band sealer and handheld coding/printing gun. Future planned equipment is an auger-servo FFS powder packing machine with three stated auger ranges. It is not installed until the owner records a commissioned date. | Latest business description |
 | D12 | Gemini 3.8 Flash is the coding-agent model in Antigravity. Runtime Gemini/API integration is not part of the initial app unless separately approved. | Confirmed |
+| D13 | The app includes a separate, strongly protected Super Admin portal plus role-specific portals/dashboards for the business roles. One codebase and design system may serve these portals, but permissions and data scope are enforced on the server. | Required |
+| D14 | GST must be tracked at purchase-bill/invoice-line level, from GST charged by a supplier through eligibility/reconciliation, ITC claimed or held/reversed, and GST paid/deposited to government. The app assists reconciliation and CA handover; it must not claim that ITC is legally eligible or file a return automatically without approved integration and human sign-off. | Required; CA validates tax treatment |
+| D15 | All listed operating and non-operating cash movements, advertising/e-commerce platform fees, licence and renewal costs, salary/wage types and sales incentives must be represented in configurable data—not just free-text miscellaneous entries. | Required |
+
+## OWNER'S EXPANDED REQUIREMENTS — BINDING COVERAGE MATRIX (VERSION 1.1)
+
+This matrix is an explicit acceptance contract. It clarifies that these are real modules and data flows, not merely labels in an expense dropdown. All amounts are in INR and financial periods follow the April–March financial year. Every head, rate, rule, category, incentive plan, licence type, channel and workflow detail that is a business choice must be editable by a permitted user.
+
+| Business area | Minimum required real behaviour | Planned release |
+| --- | --- | --- |
+| Advertising and marketing | Record bills/payments and budgets by channel/campaign; agency fees, digital/social ads, print, design, photography, influencer fees, fairs, retailer schemes, samples, promotional goods, campaign ROI where sales data exists | Base expense capture P1; campaign analysis P3 |
+| E-commerce and quick-commerce | Platform-wise gross sales, commissions, fulfilment/storage, collection/payment fees, advertising, shipping, returns, refunds, cancellations, chargebacks, discounts, penalties, TCS/GST, settlement deductions and net payout; match statement to bank receipt and flag differences | Detailed statements/reconciliation P3; data model must be designed earlier |
+| GST on purchase bills | Invoice/line-level taxable value and tax split, supplier GSTIN, invoice number/date, place-of-supply/tax type as configured, CGST/SGST/IGST/cess, reverse charge, debit/credit notes, input-credit eligibility status, GST charged versus paid to supplier, reconciliation with imported records, claimed/held/reversed credits and period | Capture in bill schema P1; reconciliation dashboard P2 |
+| GST payable and deposits | Track output tax, input credit, net estimated liability, reverse-charge amounts, payment/challan/reference/date/period, interest/late fee, refund/credit claims and supporting evidence; keep estimates distinct from filed/CA-confirmed values | P2 |
+| Other tax deductions/credits | TDS deducted from suppliers/employees where applicable, TDS/TCS suffered/credit receivable, deposits, certificates/challans, due dates, reversals and CA notes | P2 |
+| Licences and statutory registrations | Editable licence types; application/renewal/amendment/inspection/testing/consultant/government fee, paid-to party, invoice/receipt, registration number, issue/expiry dates, owner, reminder and status | P2 |
+| Payroll and labour | Fixed monthly salary, daily wage, hourly pay, piece-rate per pack/kg, contractor labour, overtime, leave/attendance, bonus, incentives, advances, loans/recoveries, employer contributions, employee deductions, payslips, full-and-final settlement and payment tracking | Core records planned P2; create base expense/party links in P1 |
+| Sales representatives | Fixed salary or other configured pay model plus travel/TA/DA, claims/reimbursements, commissions and incentive plans by sales value/collections/target/product/territory/new account/slab; earned, approved, payable and paid status; adjustments for returns/credit notes as configured | P2 |
+| Super Admin and role portals | Separate Super Admin area, owner portal, accountant, warehouse/store, production supervisor, HR/payroll, sales representative, marketing/e-commerce and CA/auditor experiences. Editable permission matrix, portal landing page, module/action permissions, record-level scope and full server enforcement | Foundation RBAC P1; all role workflows as their modules launch |
+| CRUD and audit | Every applicable entity has create/read/detail/edit/search/filter/sort/pagination; attach evidence; import/export where permitted; archive or merge masters; safely void/reverse posted financial/stock/payroll/tax records; audit history | All phases |
+| Adaptive PWA and Adalaj brand | Use supplied logo asset correctly; light/dark themes; portrait/landscape/square/foldable/split-screen/wide screens; every form, input, modal, menu, table, chart and action reflows without clipping; installable/offline capable PWA | Foundation P1 and regression-tested for each module |
+
+**Phase note:** “Included in the master specification” does not mean “already implemented” or “included in the first small release.” The task tracker must distinguish Not started / In progress / Blocked / Review / Done, and acceptance evidence is required before anything is marked Done. No module above may be permanently omitted without the owner approving a documented scope change.
+
+### Required tax/accounting distinction
+
+The system must never display all GST charged on a supplier bill as automatically claimable input tax credit. Track separate concepts: (1) tax charged on supplier invoice, (2) amount paid to supplier, (3) candidate/input credit recorded, (4) eligibility and evidence/reconciliation status, (5) credit claimed as confirmed by the CA/return data, (6) credit held, reversed or denied, and (7) GST paid/deposited to government. Where no official integration exists, label a value “entered/imported—pending reconciliation” or “CA-confirmed”; never imply that the app independently validates statutory eligibility.
+
+### Required portal distinction
+
+“Super Admin” is a separate privileged portal, not an invisible bypass in the Owner portal. If this is a single-company deployment, it can be assigned to the owner-designated super-admin account, but it must still use strong MFA, session revocation, least privilege, explicit audit logging and step-up verification for high-impact actions. Routine business management stays in the Owner portal. Cloudflare Access may add a perimeter gate for the Super Admin route but never replaces application authentication or RBAC.
+
+---
 
 ## 1. Product Requirements (PRD)
 
@@ -105,7 +148,7 @@ One place where the owner can see, at any moment: what stock exists, what each p
 
 **Non-goals for v1**
 
-- Full double-entry accounting, balance sheet and GST return filing (the CA's software does this).
+- Replacing the CA's general-ledger software or filing statutory returns automatically. The system must still provide management P&L-style measures, stock/party subledgers, purchase-bill GST/ITC reconciliation, tax-credit/liability schedules, and balance-sheet-supporting schedules; figures must be clearly marked incomplete where source ledgers or accounting adjustments are missing. A statutory balance sheet or certified tax position must not be claimed without a complete reconciled ledger and CA review.
 - Making bank payments from inside the app.
 - Replacing the sales billing system.
 - A customer-facing online store.
@@ -191,12 +234,12 @@ Ship an editable starter template containing at least the following heads and su
 - **Packing/contract operations:** in-house packing labour, daily wages, hourly labour, piece-rate wages, contractor/job-work charges, third-party packing charges, contractor freight and material shortages.
 - **Factory and utility costs:** factory/godown rent, electricity/light bill, water, generator/diesel, fuel/gas where used, factory internet/phone, security, housekeeping, maintenance, repairs, machine spares, calibration, AMC, insurance and factory safety items.
 - **Employees and payroll:** fixed salary, daily/hourly wages, overtime, bonus, incentives, salesman pay, employer statutory contributions, staff welfare, uniforms, meals/tea, travel reimbursements, advances/recoveries and employee loans. Government deductions withheld from employee pay are liabilities, not a second business expense.
-- **Administration and professional fees:** office rent, accountant/CA, legal, audit, consultants, stationery, printing, software/subscriptions, bank/payment gateway charges, communications, licences, registrations, renewals, permits and document fees.
-- **Sales, advertising and marketing:** print/online ads, social media campaigns, agency fees, design/photography, banners/standees, trade fairs, influencer/collaboration fees, retailer/distributor schemes, discounts, samples, gifts valued at cost, commissions, salesman travel/TA/DA and promotional goods.
+- **Administration and professional fees:** office rent, accountant/CA, legal, audit, consultants, stationery, printing, software/subscriptions, bank/payment gateway charges, communications, licence/application/renewal/amendment/inspection/registration fees, permits, testing/certification, filing fees, penalties and document fees. Store each licence fee against the licence record and its bill/payment.
+- **Sales, advertising and marketing:** print/online ads; Google/Meta/social-platform ads or other user-defined channels; ad credits and agency fees; design/photography/video; banners/standees and packaging creatives; trade fairs/exhibitions; influencer/affiliate/collaboration fees; product samples and gifts valued at cost; retailer/distributor schemes, discounts and rebates; commissions; salesman travel/TA/DA, phone, fuel, lodging, customer visits and approved reimbursements; campaign budgets and campaign-to-sales attribution when sales data exists.
 - **Freight and logistics:** inward transport, outward freight, courier, loading/unloading, local delivery, warehouse transfers, third-party packer movement, returns and damage claims.
 - **Finance and funding:** loan interest, cash-credit/overdraft interest, loan processing fees, penalties, late fees, credit-card charges, cheque-bounce charges and debt collection charges. Loan principal is a financing cash outflow, not an operating expense.
 - **Assets and deposits:** machine/equipment purchase, installation/commissioning, furniture/computers, rent/electricity/security deposits and other refundable advances. Capital purchases are assets, not ordinary operating expenses; depreciation is separate.
-- **Tax and compliance:** GST input/output/reverse-charge summaries, TDS/TCS credits or liabilities, PF, ESIC, professional tax, statutory filing fees and other government dues, subject to CA-confirmed configuration. Avoid treating tax collected/withheld for government as the business’s own expense by default.
+- **Tax and compliance:** invoice-level GST recorded on each purchase and sale, input-tax-credit candidate/eligibility/reconciliation/claim/reversal status, output GST, reverse charge, GST challans/deposits/refunds/interest/late fees, TDS/TCS payable or credit receivable, PF, ESIC, professional tax, income-tax-related payments as configured, statutory filing fees and all other government dues. Rules and eligibility must be CA-confirmed. Avoid treating tax collected/withheld for government as the business’s own expense by default.
 - **Owner/partner and other cash movements:** owner capital introduced, drawings, personal/business reimbursements, partner current account, grants/subsidies/insurance claims, scrap/waste sale, refunds and miscellaneous income/outflow. Classify these separately from business expenses.
 - **Miscellaneous:** a user-created category with a required description and optional later reclassification. Show uncategorised items in reports so they do not disappear.
 
@@ -222,6 +265,15 @@ Ship an editable starter template containing at least the following heads and su
 | EXP-12 | Credit and debit notes, cash discounts, rate differences | P2 |
 | EXP-13 | Owner and partner account kept separate from business money | P1 |
 | EXP-14 | Approval needed above a configurable amount | P2 |
+
+**Required bill-to-tax-to-payment flow (not optional):**
+
+1. Register each supplier bill with supplier party/GSTIN when applicable, invoice number/date, due date, attachment, purchase lines, item or expense/asset category, quantity, rate, discount, taxable value, GST rate and tax components, freight/other charges, TDS/RCM flags, gross total and amount outstanding. Support bills without GST and non-registered suppliers as applicable.
+2. For each bill line, distinguish stock purchase, operating expense, fixed asset, refundable deposit, advance and other accounting treatment. A stock bill must be linkable to goods receipt/lot creation; freight and other landed-cost lines can be allocated using a visible rule.
+3. Track GST charged, paid to supplier, candidate ITC amount, eligibility status (unreviewed, eligible, ineligible, on hold, matched, claimed/CA-confirmed, reversed or disputed), relevant tax period, reconciliation/import reference, reason and reviewer. Keep this history when a bill, supplier credit note or tax decision changes.
+4. Import supported GST purchase/reconciliation files when the exact format is validated. Show invoice matching as matched, missing from supplier statement, missing from books, value/rate mismatch, duplicate, credit note, excluded or needs CA review. Never assert a match with government records unless that source was actually imported or connected.
+5. Record GST payable/deposited separately, including tax period, challan/reference, payment date, amount by tax head when available, bank/cash account, attachment and outstanding amount. Reconcile output tax and eligible/confirmed credit into an **estimate for CA review**, not a filed return.
+6. All tax reports drill down to the exact supplier invoice, bill line, payment, credit note, status change or challan. Export the supporting invoice register and a reconciliation exceptions report.
 
 #### M3. Inventory and warehouse
 
@@ -278,16 +330,17 @@ Ship an editable starter template containing at least the following heads and su
 
 | ID | Requirement | Phase |
 | --- | --- | --- |
-| PAY-01 | Employee master with pay type: monthly, daily, hourly or piece-rate. Documents stored securely | P2 |
+| PAY-01 | Employee master for permanent/fixed monthly staff, contract staff, daily labour, hourly labour, piece-rate workers, sales representatives, office/admin staff, factory/warehouse staff and supervisors. Store pay type (monthly, daily, hourly, piece-rate, commission-only or a configurable combination), joining/exit dates, department, designation, location, documents and status securely | P2 |
 | PAY-02 | Salary components defined by the user: earnings, deductions, employer contributions, with optional formulas | P2 |
 | PAY-03 | Attendance, overtime, leave, and advance or loan recovery | P2 |
 | PAY-04 | Statutory rules as editable settings with effective dates: PF, ESIC, professional tax (state slabs), TDS on salary. Applicability switches. Values confirmed by the CA | P2 |
 | PAY-05 | Payroll run: draft, review, approve, pay, lock. Payslip PDF and bank payment sheet | P2 |
 | PAY-06 | Government dues recorded as amounts owed, with due date and challan or deposit record. Employer contributions tracked as cost | P2 |
-| PAY-07 | Salesman incentive rules: percentage of sales, slabs, target-based, per product | P2 |
+| PAY-07 | Sales representative/employee incentive rules: percentage of invoiced sales or collections, slabs, target-based, per product/SKU, territory, customer/new account, channel or campaign; configurable caps, approval, returns/credit-note adjustments, effective dates, earned/approved/payable/paid status | P2 |
 | PAY-08 | Piece-rate pay computed from batch output | P2 |
 | PAY-09 | Bonus, full and final settlement, gratuity (configurable) | P3 |
-| PAY-10 | Yearly salary and TDS summaries for the CA | P2 |
+| PAY-10 | Yearly salary and TDS summaries for the CA, with department/employee/pay-type cost reports and employer cost separated from employee deductions | P2 |
+| PAY-11 | Support mixed compensation: fixed salary plus overtime/commission/incentive, attendance-linked reductions, travel/phone/fuel claims, reimbursements, advances, loans/recovery, bonus and full-and-final settlement. Each component is configurable and effective-dated | P2 |
 
 #### M8. Loans, credit cards and borrowings
 
@@ -303,9 +356,9 @@ Ship an editable starter template containing at least the following heads and su
 
 | ID | Requirement | Phase |
 | --- | --- | --- |
-| TAX-01 | GST input and output summary from entries, for CA reconciliation (not for filing) | P2 |
-| TAX-02 | TDS deducted by us (payable, deposited, certificates due) and TDS or TCS deducted from us by customers and marketplaces (credit to claim) | P2 |
-| TAX-03 | Licence and registration register with expiry and renewal reminders: FSSAI, trademark, GMP, barcode, IEC, Udyam, Legal Metrology, factory and any user-defined type | P2 |
+| TAX-01 | Invoice/line-level GST purchase register and output-tax register; track GST charged, amount paid to supplier, candidate ITC, eligibility/reconciliation/claimed/held/reversed status, CGST/SGST/IGST/cess where relevant, reverse-charge entries, supplier credit notes, output tax, estimates, government deposits/challans and period summary for CA reconciliation (not filing) | P1 capture / P2 reconciliation |
+| TAX-02 | TDS deducted by us (payable, deposited, challan/certificate due) and TDS or TCS deducted from us by customers and marketplaces (credit to reconcile/claim), linked to party, bill, payment, sales/marketplace statement and period | P2 |
+| TAX-03 | Licence and registration register with purchase/application/renewal/amendment/testing/inspection/professional fees, payment transaction, receipt, number, issuer, issue/expiry dates, owner and reminders: FSSAI, trademark, GMP, barcode, IEC, Udyam, Legal Metrology, factory and any user-defined type. Types and applicable requirements are configurable and validated by the owner/CA/adviser | P2 |
 | TAX-04 | Compliance calendar with recurring tasks (monthly, quarterly, yearly) and an owner for each | P2 |
 | TAX-05 | Flag for small-supplier (MSME) bills nearing the payment deadline. Rules confirmed by the CA | P3 |
 | TAX-06 | Document vault for licences, certificates and test reports | P2 |
@@ -316,9 +369,9 @@ Ship an editable starter template containing at least the following heads and su
 | --- | --- | --- |
 | MKT-01 | Marketing spend through an editable channel tree: offline branding, digital, influencer, trade, exhibitions, e-commerce ads | P1 |
 | MKT-02 | Marketing materials (banners, standees, table stands, sample sachets) held as stock items and issued to salesmen or shops | P2 |
-| MKT-03 | E-commerce and quick-commerce statements: commission, fees, ads, returns, TCS, payout. Reconcile to payouts received | P3 |
+| MKT-03 | Per-platform e-commerce/quick-commerce statements: gross sales, commission, fulfilment, storage, shipping, collection/payment fees, platform ads, returns/refunds/cancellations, seller-funded offers/discounts, penalties, chargebacks, TCS/GST and other deductions; net payout and bank reconciliation with variance reasons, attachment, period and drill-down | P3 |
 | MKT-04 | Influencer and collaboration deals: fee, free product cost, deliverables, status | P3 |
-| MKT-05 | Campaign view: spend against linked sales | P3 |
+| MKT-05 | Campaign view: budget, committed cost, actual ad/agency/influencer/creative/sample cost and spend against linked sales/collections where reliable sales data exists | P3 |
 
 #### M11. Dashboard and reports
 
@@ -350,6 +403,9 @@ Ship an editable starter template containing at least the following heads and su
 | USR-05 | Period lock by month or year. Unlock needs a reason and is logged | P1 |
 | USR-06 | CA read-only access with comments on entries | P2 |
 | USR-07 | Data scope per user, for example a salesman sees only own entries | P2 |
+| USR-08 | Distinct Super Admin portal and portal-specific home/navigation for Owner, Accountant, Store/Warehouse, Production Supervisor, HR/Payroll, Sales Representative, Marketing/E-commerce Manager and CA/Auditor. Portals are permission-filtered experiences in one app, with a direct-route/API test for every role | P1 foundation / role modules by phase |
+| USR-09 | Permission builder supports module/action (view, list, detail, create, edit, post, approve, reject, void, archive, merge, import, export, restore, manage users, manage settings), data scope (all/own/department/location/entity), explicit grants/denials and a preview-as-role test. Default deny. Every API query/mutation enforces permission and record ownership/scope | P1 |
+| USR-10 | Super Admin actions use MFA, short-lived sessions, re-authentication for high-impact actions, audit alerts, limited user assignment, session revocation and optional Cloudflare Access. Super Admin is not an undocumented security bypass | P1 |
 
 #### M14. Data in, out and backup
 
@@ -676,7 +732,26 @@ These flows describe what a person does and what the system does in response. Th
 4. The server accepts, rejects with a reason, or reports a conflict.
 5. Rejected or conflicting items go to a **Needs attention** list with a clear fix action.
 
-### 3.11 Login and approvals
+### 3.11 Role-specific portals and portal routing
+
+After authentication, the server returns the permitted portal(s), permission set and data scopes. The app redirects to the user’s configured default portal. Directly typing another portal URL must show a clear 403/no-access state and the API must reject its requests. The page must never infer role from a client-controlled query string or local storage. If a user has more than one role, combine permissions using an explicitly documented policy and show an accessible portal switcher; do not accidentally increase privilege.
+
+| Portal | Home view and permitted tasks (editable via RBAC) |
+| --- | --- |
+| **Super Admin** | System health, users/roles, security events, environment/deployment metadata that is safe to expose, backups/restore status, integration/configuration and audit tools. No routine financial or payroll access unless separately granted. Strong MFA, re-authentication for sensitive operations, logged break-glass actions. |
+| **Owner** | Business-wide Where Is My Money, approvals, profit/cost, stock, payroll summary, budgets, debts, settings and all owner-authorised modules. |
+| **Accountant** | Bills, payments, receipts, GST/tax registers, reconciliation exceptions, payroll preparation, reports, import/export and period close proposals. Cannot change own privileges. |
+| **Warehouse / Storekeeper** | Goods receipt, lots, bin/location transfer, stock issue, third-party packer movements, physical counts, stock labels and dispatch records permitted by scope. No salary/bank account visibility by default. |
+| **Production Supervisor** | Batch planning/run/output, workers and attendance within scope, quality checks, wastage and material requests. No unrestricted financial records. |
+| **HR / Payroll** | Employee records, attendance, salary components, payroll drafts, payslips and statutory summaries as permitted. Sensitive ID/bank data masked unless required. |
+| **Sales Representative** | Own activity, allocated samples/marketing materials, approved expenses/reimbursements, targets and incentive statements. No other representative’s data or cost/profit data by default. |
+| **Marketing / E-commerce** | Campaign budgets and costs, marketing assets, platform statements and reconciliation exceptions, with sales/financial access limited by explicit permissions. |
+| **CA / Auditor** | Read-only financial, tax, stock valuation and payroll evidence, downloadable audit pack and comments when authorised. No posting or mutation rights. |
+
+A portal is a role-specific experience in the same PWA, not a separate unmaintainable application. Shared components and services are reused, but navigation, widgets, fields, APIs and records are permission-filtered. The permissions screen must include “preview as role” using test/demo data and must not permit a user to grant themselves a higher privilege.
+
+### 3.12 Login and approvals
+
 
 1. User enters email and password, passes Turnstile if requested, then enters the authenticator code.
 2. The server issues a session cookie and returns the user's permissions. The UI shows only allowed actions, and the server enforces them again on every call.
@@ -686,7 +761,7 @@ These flows describe what a person does and what the system does in response. Th
 
 ### Brand and readability requirements
 
-- Use the actual Adalaj logo asset supplied in the repository or project files. Do not approximate/redraw it from memory; preserve aspect ratio, clear space and legibility. If the source asset is missing, ask for it in the project’s open-items list and use a clearly labelled temporary placeholder only during development.
+- Use the actual Adalaj logo asset supplied in the repository or project files. The supplied attachment may appear as `favicon.ico`; inspect its actual MIME/content instead of trusting the extension. Preserve the original logo artwork, aspect ratio, transparency and clear space. If it is a high-resolution PNG with an incorrect extension, create correctly encoded output files with accurate extensions; do not merely rename bytes. Use a cropped/appropriately sized logo for app headers/login and purpose-built favicon/192px/512px/maskable/Apple icons for the PWA. Do not approximate/redraw it from memory or stretch it. If no usable original asset is present in the project, identify that as a blocker and use a clearly labelled temporary placeholder only during development.
 - Provide a complete **Light** and **Dark** theme. The selected theme must persist per user. All text, icons, borders, disabled controls, form placeholders, dropdown options, toast messages, chart labels and modal backgrounds must remain readable in both themes. Do not rely on pale grey text on light backgrounds or low-contrast muted text on dark cards.
 - Use the Adalaj crimson as a restrained accent, not as a background for every card. Use semantic colours for success, warning and error, plus text/icons so status is never communicated by colour alone.
 - Provide consistent shared UI primitives. Fix contrast and responsive behaviour centrally through design tokens/components instead of one-off styles on each page.
@@ -712,7 +787,16 @@ The layout responds to the actual available viewport and component width, using 
 | Tablet, portrait | 768 to 1180 px | Bottom tabs or rail | One column with side sheet for details |
 | Desktop | over 1180 px | Full left sidebar and top bar with global search | Dense tables, bulk actions, split views, keyboard shortcuts |
 
-Testing set: 360x800, 412x915, 800x360, 768x1024, 1024x768, 820x820, 1280x800, 1920x1080, plus a very wide monitor.
+Testing set: 320x568 and 360x640 minimum-width phones; 360x800; 412x915; 800x360 and 915x412 landscape; 768x1024; 1024x768; 820x820 square; 1280x800; 1920x1080; 3440x1440 ultrawide; short-height split-screen windows; browser zoom at 200% and 400%; increased text size; touchscreen; physical keyboard; iOS Safari, Android Chrome and desktop Chromium where available. Also test resizing live without refresh and PWA standalone mode. The page may scroll when content is taller than the viewport, but horizontal overflow, clipped controls and unreachable save/submit actions are defects.
+
+### 4.2.1 Pixel-adaptive implementation rules (acceptance-critical)
+
+- Use content-driven CSS Grid/Flexbox, fluid sizes (`clamp`, `min`, `max`, `minmax`), wrapping and container queries where appropriate. Breakpoints are based on available width/height and component fit, not hardcoded device model names or a single aspect-ratio assumption.
+- Every screen component adapts: `html/body`, app shells, sidebars, bottom navigation, headers, breadcrumb, cards, chart legends, data tables, labels, typography, buttons, icon controls, input/select/textarea, validation messages, date pickers, autocomplete, toasts, popovers, modal/drawer, keyboard shortcuts, upload controls, sticky footer and safe-area insets.
+- Forms change from multi-column to one column when labels/controls would become cramped. Labels remain visible; do not rely on placeholder text as the only label. Long content wraps or uses a deliberate local scroll container. Tables turn into labelled cards or provide a clearly indicated, touch-safe horizontal scroller; global page overflow must not be used as a substitute for fixing the layout.
+- Modals adapt to viewport size: centred dialog on spacious screens, full-height sheet/drawer on narrow or short screens. Dialog content and its primary action remain accessible above the virtual keyboard and safe areas. No field or action may be placed beyond the visible viewport without a usable scroll path.
+- Target at least 44×44 CSS-pixel touch areas for primary touch controls (or document an accessible exception). Keep keyboard focus visible, support logical tab order, screen readers, error association, reduced motion and system text scaling. Financial values must remain readable, with tabular numerals and sensible wrapping/scrolling.
+- Verify layout continuously during implementation using browser automation and real viewport resizing. Automated screenshots at prescribed sizes are evidence, not a fake simulator shipped to users. Every module added later must pass the same responsive suite.
 
 ### 4.3 Standard action bar
 
@@ -839,7 +923,7 @@ This is the logical schema for Cloudflare D1 (SQLite). Exact column types and co
 | --- | --- | --- |
 | entities | name, gstin, pan, address, fy\_start\_month, currency, settings\_json | One row now, ready for more |
 | users | email, name, password\_hash, password\_algo, status, mfa\_enabled, failed\_attempts, locked\_until, language, theme, last\_login\_at | Email unique |
-| roles | name, description, is\_system | Editable |
+| roles | name, description, is\_system, portal\_key, default\_route | Editable role template and default portal landing route; system-critical roles have protected safeguards |
 | permissions | key, module, action, description | For example `payroll.approve` |
 | role\_permissions | role\_id, permission\_id, scope | Scope: all, own, location |
 | user\_roles | user\_id, role\_id |  |
@@ -917,6 +1001,11 @@ This is the logical schema for Cloudflare D1 (SQLite). Exact column types and co
 | recurring\_templates | name, template\_json, frequency, next\_due, end\_date, auto\_post, remind\_days |  |
 | credit\_debit\_notes | party\_id, bill\_id, kind, amount\_paise, reason, date |  |
 | tax\_entries | kind, ref\_table, ref\_id, base\_paise, rate\_bp, amount\_paise, period, status, challan\_ref, settled\_on | GST input and output, TDS deducted and suffered, TCS, PF, ESIC, professional tax |
+| supplier\_tax\_documents | bill\_id, party\_gstin\_snapshot, invoice\_number, invoice\_date, place\_of\_supply, tax\_type, taxable\_paise, cgst\_paise, sgst\_paise, igst\_paise, cess\_paise, rcm, paid\_to\_supplier\_paise, reconciliation\_status, tax\_period | Invoice-level evidence; never infer eligibility from amount alone |
+| supplier\_tax\_lines | tax\_document\_id, bill\_line\_id, tax\_rate\_id, taxable\_paise, tax\_paise, itc\_candidate\_paise, itc\_eligible\_paise, itc\_status, reason | Line-level candidate/eligible/held/claimed/reversed amounts and status history |
+| gst\_reconciliation\_runs | period, source\_type, imported\_attachment\_id, started\_by, status, summary\_json | Records which source was imported; supports exception review rather than asserting unverified government matches |
+| gst\_reconciliation\_lines | run\_id, bill\_id, invoice\_key, match\_status, book\_tax\_paise, source\_tax\_paise, difference\_paise, reviewer\_id, reviewed\_at, notes | Matched, missing, duplicate, mismatch, credit-note or needs-review outcomes |
+| tax\_payments | tax\_kind, period, challan\_reference, payment\_date, account\_id, amount\_paise, components\_json, attachment\_id, status | Actual government payment/deposit and outstanding balance, distinct from tax accrued/withheld |
 | bank\_statement\_lines | account\_id, date, description, amount\_paise, matched\_transaction\_id | Phase 3 |
 
 ### 5.7 Assets
@@ -943,6 +1032,7 @@ This is the logical schema for Cloudflare D1 (SQLite). Exact column types and co
 | payslip\_lines | payslip\_id, component\_id, amount\_paise |  |
 | incentive\_rules | name, basis, config\_json, valid\_from | Percent, slab, target, per product |
 | incentive\_payouts | employee\_id, period, base\_paise, incentive\_paise, status |  |
+| incentive\_targets | employee\_id, rule\_id, period, target\_json, achievement\_json, approved\_by, payout\_id | Records target and measured achievement for auditability |
 
 ### 5.9 Debt
 
@@ -963,6 +1053,7 @@ This is the logical schema for Cloudflare D1 (SQLite). Exact column types and co
 | compliance\_tasks | title, frequency, due\_date, owner\_id, status, licence\_id |  |
 | campaigns | name, channel\_id, start\_date, end\_date, budget\_paise |  |
 | marketplace\_statements | channel\_id, period, gross\_sales\_paise, commission\_paise, fees\_paise, ads\_paise, returns\_paise, tcs\_paise, payout\_paise, payout\_transaction\_id |  |
+| marketplace\_statement\_lines | statement\_id, reference, line\_kind, description, taxable\_paise, tax\_paise, amount\_paise, order\_reference, matched\_transaction\_id, status | Detailed fee, ad, fulfilment, shipping, refund, penalty and payout matching |
 | influencer\_deals | party\_id, campaign\_id, fee\_paise, product\_cost\_paise, deliverables, status |  |
 | budgets | name, from\_date, to\_date, status |  |
 | budget\_lines | budget\_id, category\_id, month, amount\_paise |  |
@@ -970,6 +1061,12 @@ This is the logical schema for Cloudflare D1 (SQLite). Exact column types and co
 | import\_jobs | kind, file\_attachment\_id, mapping\_json, status, rows\_ok, rows\_failed, committed\_at, undone\_at | Every imported row is tagged with the job so it can be undone |
 
 ### 5.11 Key relationships and posting rules
+
+- Purchase invoice tax data is linked to `bills` and `bill_lines`; a tax record cannot be orphaned from its source invoice without a recorded exception. Supplier GSTIN and invoice reference are snapshotted on the document to preserve historical evidence if a party master later changes.
+- GST candidate ITC is not automatically equal to GST paid, nor automatically equal to GST claimed. Each stage and review decision is recorded separately. Credit notes and reversals create linked adjustments; posted original history is preserved.
+- Marketplace gross sales, deductions and net payouts must reconcile to the statement and bank transaction, while TCS, tax components, advertising and platform fees remain separately reportable.
+- Role-specific portals are derived from server-issued permissions and `roles.portal_key` / `default_route`; routes in the browser are not the security boundary. Every query rechecks record scope on the API.
+
 
 - A **bill** with item lines creates **stock lots** and **stock movements** when goods are received.
 - A **transaction** pays one or more **bills** through `payment_allocations`. Its **lines** carry the head and tags.
@@ -1189,6 +1286,16 @@ packing-ops-hub/
 │   │   │   │   ├── compliance/
 │   │   │   │   ├── marketing/
 │   │   │   │   ├── reports/
+│   │   │   │   ├── portals/
+│   │   │   │   │   ├── super-admin/
+│   │   │   │   │   ├── owner/
+│   │   │   │   │   ├── accountant/
+│   │   │   │   │   ├── warehouse/
+│   │   │   │   │   ├── production/
+│   │   │   │   │   ├── hr-payroll/
+│   │   │   │   │   ├── sales-representative/
+│   │   │   │   │   ├── marketing-ecommerce/
+│   │   │   │   │   └── ca-auditor/
 │   │   │   │   └── admin/
 │   │   │   ├── components/
 │   │   │   │   ├── ui/
@@ -1251,6 +1358,9 @@ packing-ops-hub/
 │           │   ├── marketing.ts
 │           │   ├── reports.ts
 │           │   ├── data.ts
+│           │   ├── portals.ts
+│           │   ├── tax-reconciliation.ts
+│           │   ├── marketplace-statements.ts
 │           │   └── admin.ts
 │           ├── services/
 │           │   ├── posting/
@@ -1404,19 +1514,15 @@ Status values: Not started, In progress, Blocked, Review, Done. Owner values: Ow
 | T1-06 | Posting service, audit log, period lock, idempotency | Agent | T1-05 | Not started |
 | T1-07 | Authentication: login, sessions, MFA, lockout, Turnstile, password hashing | Agent | T1-05 | Not started |
 | T1-08 | Roles, permissions, scope checks, admin route protection | Agent | T1-07 | Not started |
-| T1-ADMIN-01 | Separate Platform Super Admin portal, MFA, privileged access isolation and audited break-glass controls | Agent, Dev | T1-07, T1-08 | Not started |
-| T1-RBAC-01 | Permission matrix and server-side RBAC tests across modules/actions, including direct API/object-scope denial tests | Agent, Dev | T1-08 | Not started |
 | T1-09 | Security middleware: headers, CORS, rate limit, CSRF, error handler | Agent | T1-01 | Not started |
 | T1-10 | PWA shell: manifest, service worker, navigation, layouts for all form factors | Agent | T1-01 | Not started |
-| T1-11 | Design tokens, base components, Light/Dark/System themes, i18n scaffolding and supplied Adalaj logo integration | Agent | T1-10 | Not started |
-| T1-PWA-01 | Shared brand/theme system and responsive component primitives for every screen state | Agent | T1-11 | Not started |
+| T1-11 | Design tokens, base components, light and dark themes, i18n scaffolding | Agent | T1-10 | Not started |
 | T1-12 | Offline store, outbox and sync with conflict screen | Agent | T1-06, T1-10 | Not started |
 | T1-13 | Setup screens: categories, units, tax rates, locations, accounts, custom fields | Agent | T1-08, T1-11 | Not started |
 | T1-14 | Parties and items with import | Agent | T1-13 | Not started |
 | T1-15 | Starter template seed and apply | Agent | T1-13 | Not started |
 | T1-16 | Quick expense, full payment, splits, attachments | Agent | T1-14 | Not started |
 | T1-17 | Bills, payment allocation, outstanding and ageing | Agent | T1-16 | Not started |
-| T1-GST-01 | Capture supplier invoice and line-level GST for purchase, expense, freight and asset bills | Agent, CA | T1-17 | Not started |
 | T1-18 | Recurring templates and reminders | Agent | T1-16 | Not started |
 | T1-19 | Receipts, transfers, advances, owner account | Agent | T1-16 | Not started |
 | T1-20 | Amount-based approval and notifications | Agent | T1-16 | Not started |
@@ -1430,16 +1536,12 @@ Status values: Not started, In progress, Blocked, Review, Done. Owner values: Ow
 | T1-28 | Factory floor tablet mode | Agent | T1-26 | Not started |
 | T1-29 | Where is my money dashboard | Agent | T1-17, T1-21 | Not started |
 | T1-30 | Core reports with drill-down and Excel, CSV, PDF export | Agent | T1-29 | Not started |
-| T1-MKT-01 | Editable advertising/marketing cost heads and campaign-to-bill/expense linkage | Agent | T1-16, T1-30 | Not started |
-| T1-CRUD-01 | Verify CRUD and safe record lifecycle for every module, parent and child entity | Agent, Dev | T1-30 | Not started |
 | T1-31 | Import centre with preview and undo | Agent | T1-14 | Not started |
 | T1-32 | Backup jobs, R2 storage, restore drill, local copy | Agent | T1-02 | Not started |
 | T1-33 | Audit log viewer and activity log | Agent | T1-06 | Not started |
 | T1-34 | Unit and golden tests for stock and cost | Agent, Owner | T1-27 | Not started |
-| T1-35 | End-to-end tests at all required viewport sizes and themes | Agent | T1-28 | Not started |
-| T1-PWA-02 | Responsive audit of every module/portal, including compact, square, short landscape, zoom and keyboard-open states | Agent | T1-35 | Not started |
+| T1-35 | End-to-end tests at all viewport sizes | Agent | T1-28 | Not started |
 | T1-36 | Run the Part 6 checklist for Phase 1 and fix findings | Agent, Dev | T1-35 | Not started |
-| T1-DOC-01 | Keep schema, OpenAPI, ERD, flows, wireframes and user guides aligned to the implementation | Agent | T1-36 | Not started |
 | T1-37 | Load real data in staging and run a 2 to 4 week parallel pilot | Owner | T1-36 | Not started |
 | T1-38 | Go live Phase 1 | Owner | T1-37 | Not started |
 
@@ -1452,18 +1554,13 @@ Status values: Not started, In progress, Blocked, Review, Done. Owner values: Ow
 | T2-03 | Attendance, overtime, piece-rate from batches | Agent | T2-02 | Not started |
 | T2-04 | Payroll run, payslips, bank sheet, government dues | Agent, CA | T2-03 | Not started |
 | T2-05 | Incentive rules and payouts | Agent | T2-04 | Not started |
-| T2-PAY-01 | Verify all salary/pay models: fixed monthly, daily, hourly, shift, piece-rate, per pack/kg, contract and mixed components | Agent, CA | T2-04 | Not started |
-| T2-SALES-01 | Sales representative portal, effective-dated incentive rules, calculations, source lines, reversals and payout approvals | Agent | T2-05 | Not started |
 | T2-06 | Loans, schedules, prepayments | Agent | T1-38 | Not started |
 | T2-07 | Credit cards and statements | Agent | T2-06 | Not started |
 | T2-08 | Money lent, interest accrual, debt summary | Agent | T2-06 | Not started |
 | T2-09 | Asset register, depreciation, maintenance | Agent, CA | T1-38 | Not started |
 | T2-10 | Cost allocation rules and runs | Agent, CA | T2-09 | Not started |
 | T2-11 | Tax entries: GST summary, TDS, TCS | Agent, CA | T1-38 | Not started |
-| T2-GST-02 | Import/match GSTR-2B or equivalent tax statements to purchase bills; review ITC eligibility and mismatch queues | Agent, CA | T1-GST-01, T2-11 | Not started |
-| T2-GST-03 | GST payment/challan register, tax-period reconciliation and CA export | Agent, CA | T2-GST-02 | Not started |
 | T2-12 | Licence register, compliance calendar, document vault | Agent | T1-38 | Not started |
-| T2-LIC-01 | Licence/renewal event history, all related fee types, payment links, attachments and configurable alerts | Agent | T2-12 | Not started |
 | T2-13 | Budgets and cash-flow forecast | Agent | T2-06 | Not started |
 | T2-14 | CA read-only role, comments, audit pack, Tally-compatible export | Agent, CA | T2-11 | Not started |
 | T2-15 | Data scope per user and wider approvals | Agent | T1-38 | Not started |
@@ -1477,7 +1574,6 @@ Status values: Not started, In progress, Blocked, Review, Done. Owner values: Ow
 | --- | --- | --- | --- | --- |
 | T3-01 | Sales billing system import | Agent, Owner | T2-18 | Not started |
 | T3-02 | Marketplace and quick-commerce statements | Agent | T3-01 | Not started |
-| T3-ECOM-01 | Import/reconcile marketplace settlements including commission, fulfilment, ads, returns, fee-GST, TCS and net payout | Agent, CA | T3-02 | Not started |
 | T3-03 | Marketing materials stock, campaigns, influencer deals | Agent | T2-18 | Not started |
 | T3-04 | Bank statement import and matching | Agent | T2-18 | Not started |
 | T3-05 | WhatsApp or email reminders | Agent | T2-18 | Not started |
@@ -1492,7 +1588,23 @@ Status values: Not started, In progress, Blocked, Review, Done. Owner values: Ow
 | T4-05 | Multi-brand and multi-entity support | Agent | T3-09 | Not started |
 | T4-06 | Performance review. Plan a Postgres move only if D1 limits are reached | Dev | T3-09 | Not started |
 
-### 9.5 Security checklist tracker
+### 9.5 Expanded coverage acceptance tasks
+
+These explicit checks prevent broad requirements from being considered satisfied by a generic category or a visual mockup. Keep the tasks even if related implementation work appears elsewhere in the plan.
+
+| ID | Task | Owner | Depends on | Status |
+| --- | --- | --- | --- | --- |
+| T1-39 | Verify every finance/tax/marketing/payroll/licence category in the starter data; exercise add/edit/archive/reorder and ensure reports update | Agent, Owner | T1-15 | Not started |
+| T1-40 | Bill-line tax schema records supplier invoice fields and separate GST charged, supplier payment, candidate ITC and reconciliation status; migration and tests | Agent | T1-05, T1-17 | Not started |
+| T1-41 | Implement portal routing shell for Super Admin and role-specific dashboards; enforce server-side permissions, scope and direct-route/API denial tests | Agent | T1-07, T1-08, T1-11 | Not started |
+| T1-42 | Run responsive regression suite for all form factors/orientations, extreme aspect ratios, zoom/text scaling and modal/keyboard handling; correct all overflow/clipping defects | Agent, Dev | T1-10, T1-35 | Not started |
+| T2-19 | GST reconciliation: imported source, invoice match/exceptions, credit-note/reversal history, claim status and tax challan/deposit tracker; CA reviews test scenarios | Agent, CA | T1-40 | Not started |
+| T2-20 | Licence register with all fees, attachments, renewal reminders and linked payment history; verify custom licence types | Agent, Owner | T1-17 | Not started |
+| T2-21 | Payroll test matrix for fixed monthly, daily, hourly, piece-rate, contract and mixed-pay staff plus salesman commission/incentives and payslip/settlement | Agent, CA | T2-04, T2-05 | Not started |
+| T3-10 | Marketplace statement lines for commissions, logistics/fulfilment, ads, refunds/returns, fees, TCS and net payout; reconcile to bank with exception report | Agent, Owner | T3-02, T3-04 | Not started |
+| T3-11 | Verify all portal role scopes using at least one positive and one negative permission test per sensitive route and record type | Agent, Dev | T2-15 | Not started |
+
+### 9.6 Security checklist tracker
 
 Each item is marked Done only with evidence linked from `docs/security/audit-reports/`. Re-checked at the end of every phase.
 
@@ -1857,7 +1969,7 @@ Update the ER diagram, data dictionary, migration plan, OpenAPI spec and permiss
 
 ### 13.11 Additional implementation tasks and acceptance gates
 
-The task IDs below are also represented in the canonical tracker in Section 9. Section 9 owns task status; this table defines the minimum evidence needed before an ID may be marked Done. Keep both sections aligned if task scope changes:
+Add these tasks to the canonical tracker in Section 9 and keep their status truthful:
 
 | Task ID | Task | Minimum acceptance evidence | Suggested phase |
 |---|---|---|---|
@@ -1895,3 +2007,774 @@ Do not mark the product production-ready until all applicable checks pass:
 
 **Owner confirmation needed for legal/accounting decisions:** this system can capture, reconcile, organise and export tax/compliance records, but a qualified CA or responsible professional must confirm applicability and calculations, and submit statutory filings unless a separately scoped, authorised filing workflow is added. Store no portal passwords for tax authorities. Never fake a successful reconciliation or filed status.
 
+\n\n## 14. Version 2.0 Business Operating Model, Financial Intelligence, Fulfilment, Invoicing and Deployment Addendum
+
+**This section overrides conflicting older assumptions.** Build the system as a multi-entity operations and financial-control platform. Do not treat this as a single-company inventory app with a decorative second portal. The database, routes, permissions, document templates, reports, stock ownership and financial calculations must follow the rules below.
+
+### 14.1 Two legal entities and operating boundaries
+
+Create two separately configured legal entities from day one:
+
+1. **Main Private Limited company** — handles large strategic/direct business, including configured HQ/home-state depot accounts, exports, modern trade and supermarket chains, significant institutional buyers, large organised QSR/FMCG/food-service chains, major multi-outlet HORECA groups, industrial/manufacturing customers buying the powder as an ingredient, and private-label/contract manufacturing. It records its own purchase/sales invoices, suppliers, tax registrations, bank/cash, payroll, expenses, assets, liabilities, inventory and statutory documents.
+2. **Sister proprietorship firm** — handles day-to-day Gujarat distribution and secondary sales: CFAs where assigned to it, super-stockists, stockists, distributors, small/medium retailers, independent hotels/cafés/restaurants and small HORECA customers, e-commerce/quick-commerce, direct-to-consumer and other routine regional sales. It records its own customer invoices, collections, purchases, staff, expenses, cash/bank, tax records and credit control.
+
+The route/customer profile—not geography alone—determines the billing entity. Add an entity-allocation rule table and an explicit `billing_entity_id` on each quote/order/invoice. Seed suggested account categories but allow an authorised finance owner to assign/override the billing entity with a reason. The Main company must not be forced to create the sister firm's hundreds or thousands of downstream invoices. The sister firm must not be permitted to invoice in the Main company's name unless an explicitly authorised and legally reviewed workflow exists.
+
+**Keep the following separately scoped per entity:** legal name, display name, entity type, GST registrations/GSTINs, PAN and other tax identifiers, registered/dispatch addresses, bank/cash accounts, invoice/quotation/credit-note series, currencies, tax profiles, fiscal year, staff, customer/vendor masters where legally needed, inventory ownership, opening balances, sales, purchases, expenses, payroll, assets/depreciation, loans, receivables/payables, GST input credit/output tax, TDS/TCS, licences, documents, audit logs and financial statements. Shared people or counterparties may be linked to both entities, but business transactions always carry their owning entity.
+
+#### Sister-firm stock allocation, consignment and settlement
+
+Support a controlled stock allocation from Main Pvt. Ltd. to the sister firm on a monthly, biweekly, or custom schedule. The Main side records stock issued and retains the relevant transfer/allocation reference; the sister side confirms receipt, lot/batch, accepted quantity, damages/shortage and storage location. The sister then records its own downstream invoices and sales. The Main does not replicate downstream invoices.
+
+Track stock by **physical custody and legal/economic ownership separately**. Use a configurable transaction mode: (a) consignment/stock held for another entity, (b) inter-entity sale/purchase, (c) transfer under a CA-approved documented structure, or (d) other approved mode. Each mode must specify the required document (for example, tax invoice, delivery challan, stock allocation note or other supporting document), inventory valuation effect, tax treatment, revenue/COGS posting, and reconciliation rules. Never assume that common ownership makes the entities one legal person or that a stock movement is automatically non-taxable. The CA must approve the actual mode and tax configuration.
+
+The settlement model must be configurable, including sell-through settlement, bill-by-bill credit, monthly/biweekly statement, agreed credit days, partial settlement and ad hoc settlement. Do not require payment on a fixed day if the commercial arrangement permits settlement later; instead show stock outstanding, stock sold/returned/damaged, amount settled, amount due under the configured agreement, credit exposure, ageing and exceptions. A delay alone must not cause the same stock to be invoiced twice. Where a sister-firm downstream sale is the settlement trigger, reconcile the sold batch/SKU quantity to its sale record and the matching inter-entity amount without making the Main firm generate that downstream invoice.
+
+Provide a paired reconciliation view: Main issued vs sister received; Main ownership/custody vs sister custody/sales; allocated vs sold vs closing vs returned/damaged; Main receivable vs sister payable; corresponding invoice/credit note/payment references; GST treatment/status per entity; unmatched items and correction workflow. Reconciliation should work by invoice/document, SKU, lot/batch, and period. Never consolidate the two entities' statutory GST returns into a single legal filing. A consolidated management dashboard must clearly state that it is a combined view and eliminate inter-entity sales/receivables/payables only under an explicitly configured consolidation method.
+
+### 14.2 Financial KPI model and dashboards
+
+Create dedicated analytics dashboards—not just a single set of cards—with drill-through from every KPI to the underlying filtered invoices, bills, journals/adjustments, payments, batches and allocations. Support daily, Day-over-Day (DoD), week, month, Month-over-Month (MoM), selected month, quarter, financial year (April–March), Year-over-Year (YoY), custom dates and comparison windows. Comparisons must use like-for-like date windows and identify incomplete/partial periods.
+
+#### Required amount and percentage measures
+
+- Net sales/revenue, gross sales, returns, credit notes, commercial discounts and net revenue.
+- **COGS**: inventory cost relieved for goods sold, including correctly assigned raw-material and packaging cost, production/packing conversion cost, outsourced packing/job-work, and approved cost allocations. Do not expense purchases merely because a supplier was paid if the goods remain inventory.
+- **Gross Profit (GP)** = net revenue − COGS; **GP % / gross margin** = GP ÷ net revenue × 100 (show N/A when denominator is zero).
+- **OPEX** by editable head/subhead and total; **OPEX per kg** = selected OPEX amount ÷ the selected denominator's reconciled net kg sold/produced as a user-selected metric, with the denominator clearly labelled. Provide separate OPEX/kg-sold and OPEX/kg-produced rather than silently mixing them.
+- **EBITDA** = GP/operating contribution minus operating expenses before depreciation/amortisation, using the selected accounting mapping. **EBIT** = EBITDA minus depreciation/amortisation. **PBT** = EBIT plus/minus finance and other non-operating items before tax, according to configured ledger mapping. **PAT / net profit** = PBT minus income-tax expense/adjustments. Display the underlying account/head mapping, treatment of other income, finance cost, depreciation, exceptional items and income tax.
+- **Markup per kg in amount** = configured selling price/kg − configured product cost/kg. Markup % uses product cost as denominator; margin % uses net selling price/revenue as denominator. Label these separately. Provide COGS/kg, direct packing/conversion cost/kg, OPEX/kg, total cost/kg and net realisation/kg.
+- Purchase bill totals, GST billed/paid, eligible/potential/held/reversed input tax credit, output tax, TDS/TCS, statutory liabilities and amounts deposited. Distinguish *bill GST paid to supplier* from *eligible/claimed/reconciled ITC*; they are not automatically the same.
+- Cash and bank movement, opening/closing balance, operating cash movement, receipts, payments, advances, receivables, payables, inventory value, fixed-asset gross value, accumulated depreciation, net book value, loan principal, interest, customer/supplier deposits, sister-firm settlement and government dues.
+- Budget vs actual, monthly/annual forecast, expense run-rate, outstanding commitments, supplier prepayments, purchase-order balance, and overdue/at-risk obligations.
+
+**Percentages need a declared formula.** GP%, OPEX% of net revenue, COGS% of net revenue, EBITDA%, EBIT%, PBT%, PAT%, sales growth%, cost variance%, target achievement% and markup% must show their formula and selected denominator. If the denominator is zero, missing or incomplete, show `N/A` and a reason—not 0% or a fabricated figure. Provide amount and percentage at the same time.
+
+#### Required dashboard pages and filter controls
+
+1. Executive/Owner — separate entity selectors plus explicitly labelled consolidated view; net sales, GP, GP%, OPEX, EBITDA, EBIT, PBT, PAT, cash/bank, inventory, receivables/payables, GST position, assets/depreciation, loans, stock at sister/third party and upcoming commitments.
+2. Profitability — P&L waterfall/trend, revenue vs COGS vs OPEX, GP/EBITDA/EBIT/PBT/PAT amounts and percentages, comparisons, per-kg costs and margin by SKU/pack size/product/category/customer/channel/salesperson/entity.
+3. Cash Flow & Commitments — cash/bank, supplier part-payments and advances, PO commitments, scheduled salary/rent/electricity/licences/EMIs, expected collections, credit exposure, bills due and scenario forecast. Clearly separate actual bank/cash flows from forecast.
+4. GST & Statutory — purchase-wise input tax/ITC status, sales/output tax, return-period mapping, credit/debit notes, reversals, TDS/TCS, tax payments/challans and CA reconciliation exceptions.
+5. Inventory & Batch Economics — raw, primary/secondary/tertiary material, WIP, finished stock, lot/expiry, stock at contractor/sister, yield/rejects, stock-days, COGS/kg, packaging consumption, batch-to-customer trace.
+6. Supplier & Procurement — orders, expected/initial fulfilment dates, received/short/late quantities, bills, GST, advances/part-payments, outstanding and lead-time performance.
+7. Customer & Credit — quotes, orders, fulfilment SLA, invoices, dispatch/POD, outstanding, agreed terms, credit charges, receipts, credit notes, overdue exposure and dispute status.
+8. Payroll & Sales Representative — monthly fixed/daily/hourly/piece-rate pay, total employer cost, attendance, incentives earned/approved/paid, employee advances and statutory dues. Restrict confidential data by RBAC.
+9. Sister-Firm Reconciliation — allocation vs accepted/sold/closing stock, inter-entity amount, settlement status, unmatched records and age.
+10. Marketing & E-commerce — spend by platform/campaign/marketplace, commissions, fulfilment/storage fees, returns, ads, TCS, payout receivable and ROAS only when linked attributable sales exist.
+11. Licences & Assets — renewal calendar, statutory documents, machine purchase/installation, depreciation, asset NBV, maintenance and renewal costs.
+
+Every relevant dashboard gets multi-select slicers/filter chips for entity, date range, comparison period, fiscal year/month, SKU/product, pack size, item category, brand, customer segment, customer, supplier, sales representative, channel/platform, warehouse/location, batch/lot, machine, expense head, GST treatment/status, invoice/order state, payment mode, due/ageing status and currency. Filters must be composable; display active-filter chips and a single action to clear filters. Exports must reflect the applied filter and show its parameters. Use accessible charts with table/download alternatives. Do not use charts as a substitute for exact values.
+
+#### Financial integrity gates
+
+This is initially a management subledger/analytics platform. If the system lacks complete sales billing, journal entries, opening balances or accountant adjustments, show the affected P&L/KPI as **provisional/incomplete**, with a visible missing-data checklist. Do not claim an audited P&L, statutory balance sheet, EBITDA or PAT merely from cash movements. Management-defined EBITDA/EBIT/PBT/PAT calculations require a documented head-to-ledger mapping approved by the accountant/CA. Keep inventory purchases, capital assets, loan principal, refundable deposits, owner drawings, GST collected/withheld, and employee deductions distinct from ordinary operating expenses.
+
+### 14.3 Purchase orders, supplier commitments and multi-part payments
+
+A purchase is not a single expense form. Implement the procurement workflow: request (optional) → purchase order → approval → supplier confirmation → expected/initial fulfilment date and planned split deliveries → advance/part-payment schedule → goods receipt (GRN) by lot → QC/hold/release → supplier invoice → bill GST review → payment allocation → reconciliation/closure. Service purchases (rent, electricity, CA/professional fees, licences, advertising) can use a service receipt/period record instead of a physical GRN.
+
+Track PO quantity/value, received quantity/value, accepted/rejected/short quantity, billed value, advances, each part-payment, credit/debit note, remaining payable, due date, promised date, initial promised fulfilment date, actual dates and delivery performance. A supplier advance is an asset/advance until adjusted, not automatically an expense. Partial purchase payments must allocate against one or multiple bills/POs; overpayments remain as an advance on account with audit history. Link purchase-order → goods/service receipt → supplier bill → GST data → payments → stock/expense/asset posting. Warn on duplicate bills using supplier identity, invoice number/date, amount, GSTIN and document hash where feasible. Allow over/under-delivery only with approved tolerance and reason.
+
+### 14.4 Sales orders, fulfilment planning and floor flow
+
+A quote is not a sales order, a sales order is not an invoice, an invoice is not a dispatch, and dispatch is not proof of delivery. Implement these as separate linked records/states. A customer's requested delivery date and the business's promised/initial fulfilment date must both be stored, along with actual stage timestamps, delay reason, owner and revised ETA. Daily fulfilment dashboard must show due today, overdue, at risk, waiting on stock, waiting on production/packing, awaiting QC, awaiting outer packing, dispatch-ready, dispatched and proof-of-delivery pending.
+
+Required configurable flow:
+
+1. Quote/demand → approve price/credit policy → accept into sales order.
+2. Check available-to-promise stock by entity, location, lot/batch, hold status and expiry. Reserve available finished goods or generate production/packing demand. Never reserve the same unit twice.
+3. Plan production by pack SKU, batch, line/machine, staff, target quantity, required-by time and material availability.
+4. Pick raw powder and primary packaging → pack/print/code/seal → record hourly/shift output, reject, wastage and QC → post packed SKU/batch stock.
+5. **Secondary bundling** → scan/pick finished retail packs → create a bundle/package ID using the current configurable conversion rules → record quantity per SKU, bundle count, operator, start/end time and quality.
+6. **Outer/tertiary packing** → load one or multiple SKUs/bundles into PP bag, jute bag, carton/box or another configured container; capture each container's contents, SKU/batch/lot genealogy, count, net/gross/tare weight, packaging material used, seal/label, destination/order and operator. Mixed-SKU cartons/bags are allowed only when enabled by the order/container rule.
+7. QC and order reconciliation → dispatch staging → pick list/packing list → invoice or challan in the legally approved order of operations → transporter/vehicle/consignment reference → dispatch timestamp → proof of delivery, customer shortage/damage and closure. Keep the actual order/invoice/dispatch policy configurable because the required legal document can vary by sale/export mode.
+
+Starter packing conversions from the user's description must be **editable draft defaults**, never immutable code: ₹10 retail unit price is distinct from net weight; provisionally allow 10 units per strip and 3 strips per bundle (30 units/bundle) only after owner confirms; 100g = 10 pieces per inner pack; 200g = 5 pieces per inner pack; 500g = 2 pieces per inner pack. 1kg, 2kg and 5kg have no standard inner bundle by default; ship them as individual units or put them into an outer package according to the customer order. The 10kg–50kg outer PP/jute bag/box is a configurable shipping container that may contain a homogeneous SKU or permitted mixed SKUs; its size, allowed contents and weight limits are maintained as data. Do not assume 10–50kg is the product's net weight merely because it is the outer package capacity.
+
+The system must track **primary packaging material** (printed pouch/roll/film, silver-foil pouch/bag, sticker/label, coding ink/ribbon and configured components), **secondary packaging** (inner bundle/strip, retail bundle, insert), and **tertiary/dispatch packaging** (PP/jute bag, carton/box, tape, strap, pallet, shipping label). Track materials purchased, issued to batches, returned, damaged, consumed and present in the dispatch area. All pack conversion quantities, allowed mixed-product combinations, container capacity, tare and unit conversions are configurable.
+
+Every packed unit/container carries traceability links back through finished SKU and batch to raw material supplier lot(s), primary packaging lot(s), packing date/time, machine/line, operators, QA release, secondary/tertiary package and final buyer/order/dispatch. Use a QR/barcode for internal traceability; store serialised package labels and scan events. Support stock provisioned for expected demand as well as make-to-order packing. Make-to-stock vs make-to-order is a per-SKU/order/production-plan setting, not an exclusive global mode.
+
+### 14.5 Quotations, orders, invoices, credit notes and document numbering
+
+Build a reusable, entity-aware commercial document engine that supports quotes, pro-forma invoices where relevant, sales invoices, export/commercial invoices, delivery challans, packing lists, credit notes, debit notes, receipts and statements. The same engine must be configurable for other firms/entities without copied hardcoded branding. Use a form/template designer for brand logo, header/footer, address, contact details, legal identifiers/certifications, signatures/stamp, bank/payment instructions, QR code, line columns, terms and language. Store each entity's templates and numbering policies separately.
+
+#### Customer/buyer master and invoice data
+
+- Capture legal/trade name, billing and shipping address, contact, email, phone, country, state/province, postal code, GSTIN/tax ID type/value, customer type, currency preference, price list, credit limit, payment terms, destination/place of supply and document language.
+- Validate Indian GSTIN format and structured fields where feasible, but do not present format validation as proof of registration. Allow a privileged user to update stale customer data or override a failed verification with a reason, who/when history, supporting evidence and a verification-status marker. Preserve prior invoice snapshots; customer master updates must never rewrite previously issued invoices.
+- International documents support a country/territory profile, buyer identifiers, currency, exchange rate/reference date, origin/destination, export purpose, country-specific tax fields, bank/payment details, Incoterms, shipment terms, customs/HS codes, origin declaration and additional document checklist as configured. The UI may support all ISO-listed destinations and configurable country profiles; it must not claim legal compliance with every jurisdiction automatically. Country-specific requirements need authoritative rule maintenance and qualified review.
+- Each line item can select any configured product/SKU or customer-specific private-label description; arbitrary pack sizes/formats and customer ordering units are supported through unit conversion. Each line stores description snapshot, SKU/HSN/SAC where applicable, quantity/unit, unit price, discount, tax treatment and rates, charge/levy components, batch/lot allocation as relevant, packaging and promised fulfilment details. Taxes are per line, not one global default blindly applied to every item.
+
+#### GST, charges and international tax model
+
+Support per-line tax category (taxable, zero-rated/export, exempt, nil-rated, non-GST/out-of-scope or jurisdiction-specific categories as configured), HSN/SAC, applicable rate components, CGST/SGST/IGST/cess or other named tax components, taxable value, rounding and tax amount. The software must not automatically choose intra-state vs inter-state classification using browser location; derive proposed treatment from the seller registration, place of supply, customer data and transaction type, then flag exceptions. Tax calculations and e-invoice applicability need effective-dated, CA-reviewed rules. Credit/debit notes must link to the original invoice and update reconciliations correctly.
+
+For applicable domestic invoices, store e-invoice IRN, acknowledgement number/date and official QR content only after a verified authorised integration or a human-confirmed valid response. Do not manufacture an official IRN/QR code or present a decorative QR as a legal e-invoice QR. A separate payment QR may be generated from verified merchant/payment data.
+
+#### Credit and payment policy
+
+Support cash/prepaid, advance, part-payment, due-on-dispatch, due-on-delivery, fixed credit days, milestone-based payment, bill-by-bill settlement, monthly statements, customer-specific terms and approved exceptions. Store due date(s), schedule, advances, each receipt/allocation, balance, overdue age, disputes and credit-limit utilisation. The sister-firm arrangement can have its own agreed settlement structure and is excluded from generic credit-charge policy unless specifically enabled by an authorised finance user.
+
+Create a **configurable credit-surcharge policy**, not hardcoded financial logic. The owner's current draft is a 2% add-on for configured credit invoices and a separately approved charge/rate/method for credit periods longer than six months. These are proposed defaults requiring explicit configuration and commercial/tax review. Store the basis (invoice base/line values/balance), fixed vs monthly/annual rate, one-time vs periodic charge, start date, day-count/rounding, tax treatment, compounding (default disabled), trigger and exception groups. Display the exact calculation before issue, require approved permission to override and snapshot the policy on the document. Do not silently add a surcharge to every invoice or sister-firm allocation.
+
+#### Dynamic series, audit and deletion logic
+
+Maintain independent series by entity, document type, financial year, branch/registration where configured and prefix. Generate official document numbers server-side within an atomic database transaction. Add unique constraints and concurrency tests. Never reuse a number from an issued/voided/deleted document. Drafts may use a clearly-labelled draft reference. On issuance, persist an immutable versioned snapshot of seller data, buyer data, lines, calculations, tax rules, terms, logos/branding revision and rendered file hash. A correction after issue must be a permitted revision or a linked cancellation/credit/debit note; never silently overwrite or hard-delete an issued document. Voided/cancelled numbers remain in the register with status, reason, user, timestamp and references. All create/edit/approve/issue/void/print/export/send/payment-allocation actions are audited.
+
+Quote lifecycle: draft → reviewed/approved if required → sent → viewed (if tracked) → accepted/rejected/expired → convert to order, preserving accepted quote version and commercial terms. Quote revision produces a new version, not an invisible overwrite. Invoice lifecycle is separate from dispatch and receipt. Prevent duplicate conversion of one accepted quote/order quantity unless a controlled partial-order flow is used. Support partial fulfilment/invoicing only where enabled and show remaining quantity/value.
+
+#### Document appearance and exports
+
+- Responsive live preview; A4 and thermal/compact layouts only where configured; clear print stylesheet; no clipped totals, terms or footers.
+- Logo in SVG/PNG through the authorised entity's asset store; dynamic QR/payment QR; company address/contact; registration/certification badges selected only when valid and approved; signature and stamp image; custom header/footer/disclaimers; page numbers; terms; bank details; order/PO references; shipment/export fields. Do not display certificates/claims merely because a text field exists—store document validity and require authorised inclusion.
+- Quote and invoice document can be exported as PDF, HTML and DOCX where the selected export renderer supports it; also provide structured JSON/CSV data exports. HTML is the print preview, not the permanent legal record. Persist the issued snapshot/PDF or canonical rendered archive as required by retention rules.
+- Email/share actions must use explicit user action and permission. Redact internal costs, margins, notes and other entity's data from customer documents. A quote/invoice file must contain only the selected entity's data.
+- QR, SVG, uploads and any user-supplied template values must be validated/sanitised. Never inject arbitrary raw HTML into the invoice template.
+
+#### Reusable MJS renderer
+
+Maintain the standalone renderer at `scripts/documents/Adalaj_Quotation_Invoice_Engine.mjs` and its sample at `scripts/documents/examples/Adalaj_Quotation_Invoice_Example.json`. The companion `Adalaj_Quotation_Invoice_Engine.mjs` is a standalone no-dependency Node.js reference renderer for a quotation/invoice HTML preview. It escapes dynamic text, uses minor-unit integer money and configurable line taxes, accepts per-entity branding and QR images, and includes sample input JSON. It is **not** the authority for numbering, legal GST treatment, database persistence, authentication or issuance. In the app, call it through a tested server-side adapter after permission checks and server-calculated values. Document numbering, tax-rule selection, payment policies and issued snapshots stay in the authenticated backend. DOCX/PDF output is a separate export adapter and must be tested against the same immutable document snapshot.
+
+### 14.6 Authentication, portals and password-manager behaviour
+
+- The public login screen must not show a roster of authorised account emails, usernames, preset passwords, role credentials or any `adalajfoods.com` hint. The old hardcoded/demo role-credential list must be removed from UI code, seed data, screenshots and production routes.
+- No auto-login when someone opens the URL. Only a successful explicit authentication flow may establish a session. Do not expose business data before authentication; unauthenticated visits go to the login screen.
+- Support browser/OS password managers using `autocomplete="username"`, `autocomplete="current-password"`, and `autocomplete="new-password"` on reset/change forms. This lets the user opt into password-manager save/fill. Never implement “remember me” by storing the raw password or an access token in localStorage. Use secure HttpOnly/Secure/SameSite cookies, CSRF protections and revocable server-side sessions.
+- On a fresh production database, use a one-time deployment/bootstrap secret or protected CLI flow to create the first Super Admin. No publicly known default password. Force a unique password change and MFA enrollment, then disable the bootstrap route. Create additional users through invitations/reset links with expiry and single-use tokens. Do not send secrets in source control or this document. If a shared/default credential was ever used in a test system, rotate it before production.
+- Define a **Platform Super Admin** portal for platform-level configuration, entity provisioning, health/backup/security administration and tightly audited support; a separate **Business Owner/Entity Admin** portal for operational controls for the selected entity; and role-specific workspace landing pages for finance, procurement, store, production, HR/payroll, sales, dispatch, marketing/e-commerce and CA/auditor. Super Admin does not implicitly mean unrestricted access to every private employee/customer record: platform vs business permissions are separate, with just-in-time elevation and audit for support access.
+- Both route navigation and API access are permission-checked. Hiding a tab is not security. Every query filters by authorised entity IDs and row-level scope on the server. Test direct URLs, guessed IDs, exports, file URLs and API calls across every role/entity. Users must never see another entity's invoices, GST records, payroll, cash accounts, stock or reports unless a specific audited consolidated permission allows that view.
+
+### 14.7 CRUD and transaction state rules across all layers
+
+CRUD applies to every appropriate level: entity settings, customers/suppliers, SKU/packaging, POs, GRNs, bills, advances, payments, payroll, tax documents, licences, quotations, sales orders, invoices, fulfilment stages, batches, packages/bundles, dispatches, customer receipts, sister-firm allocations, reconciliation exceptions, dashboards/reports and document templates. Each list needs permission-aware details, create/edit forms, search, filters, sorting, pagination, attachments, status/history, import/export and a useful empty state.
+
+Do not use one generic unrestricted delete action. Draft/unposted records may be deleted only if policy permits and audit retention is satisfied. Posted stock/money/payroll/tax/invoice events must be corrected with a reversal, void, return, credit/debit note or adjustment; retain history and reason. Referenced masters are archived/merged instead of hard-deleted. All actions, including rejected attempts on sensitive operations where practical, are auditable. The UI must show disabled actions with explanations when a role, state, approval, period lock or validation rule prevents execution.
+
+### 14.8 Backup and data portability additions
+
+Provide owner-approved manual and scheduled encrypted backups at configurable intervals, with a visible last-success/last-failure status and immutable backup metadata. Include versioned JSON export/import for permitted system and business data, mapping/schema version, entity ID, export timestamp, checksum, attachments manifest and redaction option. Never import users, active sessions, password hashes or secret values from an untrusted backup by default. Restore must validate integrity, show a preview and target environment, require explicit high-privilege confirmation, produce an audit event, and be tested first in staging. Keep a tested copy outside Cloudflare. Backup/restore access is a high-privilege permission; downloads are logged and should require recent re-authentication/MFA. On login, show the latest backup timestamp/status and warn if the configured backup interval has been missed. Offer an explicit “Download JSON backup” action to permitted users. Do not force an uncontrolled download on every login; any login-triggered backup reminder/download policy must be owner-configurable, permission-checked and tested for privacy and usability.
+
+### 14.9 Implementation plan update (build in this order)
+
+| Stage | Build scope | Mandatory exit gate |
+|---|---|---|
+| V2-0 Repository and risk audit | Inspect current code, remove login hints/demo credentials and fake live data; map current routes and buttons to modules; document assumptions/ADRs; verify logo asset and existing Cloudflare config | Reproducible local build/test baseline; security blockers/tasks recorded; no production data touched |
+| V2-1 Identity, entity and permissions foundation | Two entity records; auth, session/MFA, one-time Super Admin bootstrap, roles/permissions, tenant/entity scope, audit log, theme/preferences, PWA responsiveness | Automated cross-entity/direct-URL/API permission tests pass; explicit login only |
+| V2-2 Master data and procurement | Configurable items/units/pack recipes/parties; supplier POs with promised fulfilment dates; goods/service receipts; supplier bills; GST line data; advance and multi-part payment allocations | PO-to-GRN/bill/payment flow reconciles; partial and duplicate cases tested |
+| V2-3 Inventory, batch and fulfilment | Lot tracking; own-brand in-house vs outsourced packing; bundle conversions; mixed-SKU outer packages; order reservations; stage timestamps; dispatch/POD | Supplier-lot-to-buyer trace test passes; no duplicate reservation/stock movement; physical stock reconciliation demonstrated |
+| V2-4 Commercial document engine | Dynamic quote/order/invoice/credit/debit note series, customer GST data, terms, editable surcharge policy, per-line tax, snapshots, render/print/PDF/DOCX adapters, companion MJS renderer | Concurrency tests prove no duplicate/reused issued numbers; issued file matches immutable calculation snapshot |
+| V2-5 Money, statutory and payroll | Expenses, cash/bank, payables/receivables, monthly/daily/hourly/piece-rate payroll, sales representative incentives, licences, statutory credits/dues, asset/depreciation | Sample month-end reviewed by accountant/CA; opening balances and exclusions documented |
+| V2-6 Management intelligence | KPI definitions and mappings; amount+percentage views, per-kg metrics; DoD/MoM/YoY/custom time; multipage dashboard filters and drill-through; budget/forecast | Reconcile dashboard totals to underlying transaction reports for test periods; provisional data clearly labelled |
+| V2-7 Inter-entity and channel reconciliation | Monthly/biweekly allocation; custody/ownership; sell-through/bill-by-bill settlement; reconciliation exceptions; entity-specific and consolidated management dashboard | Main issue vs sister receipt/sales/closing/settlement balances to zero variance or explain every exception |
+| V2-8 Hardening and live deployment | Responsive/a11y/security scans, backup-restore drill, dependency audit, load test, R2 permissions, monitoring, domain/DNS and Cloudflare deployment | Owner-approved staging sign-off, verified production URL, rollback plan, no unresolved critical/high security findings |
+
+Do not pretend these stages are completed because a document or component exists. Keep the master task tracker current, mark each requirement `Not started / In progress / Blocked / Review / Done`, link it to code/tests, and provide evidence.
+
+### 14.10 Additional task tracker (initial state: Not started unless verified)
+
+| ID | Task | Priority | Status | Acceptance evidence |
+|---|---|---|---|---|
+| V2-T01 | Replace single-entity assumptions with two legal entity scopes and entity-specific config | P0 | Not started | Schema migration, entity isolation tests, documented entity setup |
+| V2-T02 | Implement one-time Super Admin bootstrap, MFA, login, logout, reset and session revocation | P0 | Not started | No credential hints/default password; auth tests pass |
+| V2-T03 | Implement server-enforced RBAC/row scope on pages, APIs, exports, files and jobs | P0 | Not started | Role × endpoint access matrix test report |
+| V2-T04 | Implement purchase orders, initial fulfilment dates, split receipts, advances and part payments | P0 | Not started | PO→GRN→bill→payment reconciliation test |
+| V2-T05 | Implement bill-level GST components and candidate/eligible/held/claimed/reversed/deposited statuses | P0 | Not started | Purchase-bill/ITC test dataset reconciles; CA review |
+| V2-T06 | Implement packing bundles, configurable conversions, mixed-SKU outer packages and barcode genealogy | P0 | Not started | Order-to-package-to-lot-to-customer trace test |
+| V2-T07 | Implement promised vs actual fulfilment and daily at-risk/overdue queues | P0 | Not started | Stage transition and delay exception tests |
+| V2-T08 | Implement quotation/invoice series, immutable snapshots, void/credit note flow and customer GST override audit | P0 | Not started | Concurrent issuance and correction tests |
+| V2-T09 | Implement credit terms/charges as approved configurable policy; no charge by hidden default | P0 | Not started | Policy test matrix including >6-month and sister-firm exception |
+| V2-T10 | Implement executive/profitability/cash/GST/inventory/supplier/customer/payroll/sister-firm dashboards | P1 | Not started | KPI formula dictionary and reconciled test-period exports |
+| V2-T11 | Implement GP/COGS/OPEX/EBITDA/EBIT/PBT/PAT, amount and percentages, DoD/MoM/YoY and per-kg metrics | P1 | Not started | Reproducible KPI tests for zeros, missing data, partial periods |
+| V2-T12 | Implement seller/customer country profiles and export/commercial invoice fields | P1 | Not started | At least domestic GST, export, foreign currency and exempt/zero-rated scenario test; legal review gate |
+| V2-T13 | Implement dynamic shared MJS renderer integration with safe image/QR/logo inputs | P1 | Not started | Escaping/XSS tests, render snapshot comparison, sample HTML output |
+| V2-T14 | Implement entity-specific logo/header/footer/certifications/signature/stamp and branded quote/invoice templates | P1 | Not started | Template preview/print test; invalid/expired certificates blocked |
+| V2-T15 | Implement interval/manual JSON backup, restore preview, audit and off-platform copy | P0 | Not started | Staging restore record and integrity checksum |
+| V2-T16 | Run target device, zoom, portrait/landscape, light/dark, keyboard/soft-keyboard and accessibility tests | P0 | Not started | CI screenshots/Playwright report at documented viewports |
+| V2-T17 | Deploy using the owner's Cloudflare account and report the actual verified URL | P0 | Not started | Live smoke-test evidence; do not invent a URL |
+
+### 14.11 Decisions that must be configurable rather than guessed
+
+1. Legal names, GSTINs, PAN, registered addresses, bank details, signatories and current certificate IDs for each entity.
+2. Which HQ/home-state depot, CFA and SS/customer account is billed by which entity, especially where a direct account and a downstream distribution account coexist.
+3. Legal mode for each Main-to-sister stock allocation (consignment/custody, sale/purchase, delivery challan or other CA-approved mode), tax treatment, transfer price and when the amount becomes due.
+4. Default inter-entity credit period/settlement trigger, ageing thresholds, allowable stock variance and the exact credit limit.
+5. Whether the provisional ₹10 unit conversion is 10 units per strip and three strips per bundle; confirm exact current pack dimensions/weight and whether the third-party contractor supplies any packaging.
+6. Credit-surcharge formula, the exact meaning of the 2% value, taxability, calculation basis, the rule for credit over six months and who can approve exceptions. Do not assume it is legally enforceable or automatically taxable.
+7. Effective-dated tax/ITC, TDS/TCS, payroll/PF/ESIC/PT, depreciation and financial-account mappings, all validated by the CA.
+8. Country profiles, export tax/Incoterms/document checklist, approved currencies/exchange-rate source and where local counsel/agent review is required.
+9. Which exact charts/KPIs are trusted from the available data and which need imported sales/ledger openings or CA adjustments.
+10. Which third-party e-invoice/e-waybill/payment/marketplace/bank API integrations are approved and funded.
+
+Use safe, labelled defaults only for development. Keep unresolved commercial/legal decisions visibly `Needs configuration/CA approval` and block document issue or posting only when that missing decision genuinely affects correctness.
+
+### 14.12 Cloudflare setup and deployment instruction
+
+All production app layers requested for this system must use Cloudflare services: frontend delivery, Worker API, D1 database, R2 private document/backup storage and appropriate queues/cron/rate limiting. Before deploying, the agent must inspect current Cloudflare platform guidance, plan limits and pricing, choose and document the supported hosting mode, create distinct development/staging/production resources, configure secrets through Wrangler/dashboard secret storage, apply migrations to the correct environment, test R2 access controls, set WAF/rate-limit rules, and run smoke tests.
+
+The application can provide a local preview before deployment, but a live `*.workers.dev` or custom-domain URL exists only after it is deployed successfully in the owner's Cloudflare account. The agent must report the **actual URL printed/confirmed by deployment**, verify it from the browser, and never fabricate a URL. Domain registration/DNS, billing, API tokens, production account authorisation and any required custom-domain verification require the owner's action. Do not put Cloudflare API tokens in this Markdown, source control, frontend variables, or AI chat.
+
+### 14.13 Final version 2.0 acceptance gate
+
+Version 2.0 is ready for controlled production only after all of these are verified:
+
+- Two legal entities operate independently, and a user cannot read/write other-entity data except through explicitly granted, audited cross-entity or consolidated views.
+- Super Admin and entity portals are separated; no demo credential roster or seeded known password appears on login; URL opening never authenticates anyone; password-manager autofill works by browser features.
+- Every advertised CRUD action is connected to real persisted data and API permission checks; issued records use safe void/reversal instead of history-destroying deletion.
+- PO/GRN/bill/GST/payment and advance/part-payment flows work with partial fulfilment and reconciliation.
+- Batch and packaging workflow follows powder/primary packing/secondary bundle/outer mixed or single-SKU packing/dispatch/POD, with end-to-end supplier-lot-to-customer traceability.
+- Quote/invoice numbering, credit terms, GST per line, immutable snapshots, QR/logo/branding, credit notes and export/print outputs work without reused numbers or silent recalculation of old documents.
+- Each dashboard shows exact amounts and defined percentages, supports period/entity/channel/product slicers, and drills to sources; incomplete data is identified as provisional.
+- Daily fulfilment queues, monthly/biweekly sister-firm reconciliation and stock/payment variance views are usable.
+- Responsive/accessibility/security tests pass across documented screen sizes and modes; backups can be restored and the live Cloudflare URL is independently verified.
+- Tax, credit charging, multi-entity transfer and country-specific document treatment have accountant/CA/legal approval where required.
+
+
+## 14.14 Mandatory end-to-end scenario matrix
+
+Antigravity must implement automated tests for the following. A screen existing is not evidence; each scenario must verify persisted records, stock/payment effect, audit event, permissions and report output. Where tax/legal behaviour depends on a CA-approved configuration, tests validate that the approved configuration is applied and that missing configuration blocks or flags the transaction.
+
+| ID | Scenario | Expected behaviour |
+|---|---|---|
+| SC-01 | Main Pvt Ltd issues a quote and invoice directly to a large institution | Only Main entity's series, tax profile, seller snapshot, inventory and ledgers are used |
+| SC-02 | Sister firm issues 500 separate downstream invoices from one monthly allocation | Each invoice belongs to sister; Main sees allowed summaries and reconciliation, not copied invoices |
+| SC-03 | Main allocates 1,000 packs, sister accepts 990 and reports 10 damaged | Custody/ownership and damage adjustment differ by configured transfer mode; variance is reason-coded |
+| SC-04 | Sister sells part of an allocated stock and pays a partial settlement | Sold stock and payable/receivable reconcile; remaining stock and balance remain outstanding |
+| SC-05 | Unsold sister stock remains for three months | Ageing and stock value are visible; no automatic duplicate invoice or forced payment trigger |
+| SC-06 | Allocation returned fully or partially to Main | Lot-level movement, condition, return reason, linked documents and settlement reversal are recorded |
+| SC-07 | Supplier requests 40% advance, delivers in two lots, and gets three part-payments | PO, advance, GRNs, bills and payment allocations reconcile with remaining commitment and payable |
+| SC-08 | Goods arrive short or damaged and invoice amount differs from GRN | Stock accepted/rejected, bill hold/variance, debit/credit note or approval workflow is required |
+| SC-09 | Electricity/rent/CA bill has no physical stock receipt | Service period/receipt, bill, GST/TDS fields, due date and payment are linked without fake inventory |
+| SC-10 | Raw powder or printed-film purchase remains partly unpaid | Inventory receipt/valuation is not reduced by cash paid; payable and advance balances are correct |
+| SC-11 | Bill is paid before invoice arrives | Advance/prepayment is recorded and later matched to the right supplier invoice without double expense |
+| SC-12 | One bank payment settles three supplier invoices | Payment allocation retains each invoice split; unapplied amount remains on account |
+| SC-13 | Same vendor invoice is imported twice with different filenames | Duplicate detector flags matching metadata/amount and prevents silent duplicate posting |
+| SC-14 | Purchase has GST but ITC is ineligible, held, reversed or not yet reconciled | Supplier bill GST, cash paid and eligible/claimed ITC remain separate measures |
+| SC-15 | Purchase is subject to a CA-configured reverse charge | RCM payable and any allowed credit are represented separately; no generic automatic treatment |
+| SC-16 | GST amount or invoice number is corrected by a supplier credit/debit note | Original record remains immutable; linked adjustment updates relevant reconciliation |
+| SC-17 | Customer pays advance before shipment and later makes two further payments | Receipt allocation, invoice balance and customer advance liability reconcile without counting receipts as extra revenue |
+| SC-18 | Customer invoice is partly dispatched over several shipments | Shipped quantity, remaining fulfilment, invoice state, delivery references and stock relief follow configured policy |
+| SC-19 | Customer requests a pack size not in starter list | Authorised user adds SKU/BOM/conversion in configuration; no source-code edit is required |
+| SC-20 | ₹10 strip count/weight is unknown or changed | MRP/price, net weight, sachet count, strip count and bundle count are separate editable fields |
+| SC-21 | 100g/200g/500g packs are placed into bundle and then a mixed-SKU outer PP/jute/carton | Package ID records all contents, quantities, batches, container type, measured weights and destination |
+| SC-22 | Mixed-SKU outer pack would exceed capacity or contains a disallowed SKU | System blocks or flags it before closure; supervisor override needs reason and permission |
+| SC-23 | Production has a packaging-film shortage or unusually high rejection rate | Batch cannot close silently; material variance, reason, approved tolerance and cost impact are captured |
+| SC-24 | A raw material lot is recalled after dispatch | Traceability finds affected batch, package, order, invoice, customer and delivery, with exportable recall report |
+| SC-25 | Order's promised date is missed because stock/QC/secondary packing is delayed | At-risk/overdue dashboard records delay reason, owner, revised ETA and customer communication status |
+| SC-26 | Quote is revised after sending, expires, is accepted, and only part is ordered | Version history preserved; order references accepted version and remaining quote quantity/value is clear |
+| SC-27 | Issued invoice has wrong quantity/price/customer GSTIN | No silent edit; authorised correction, cancellation or linked credit/debit note follows configured law/policy |
+| SC-28 | Two users issue documents simultaneously at the end of the financial year | Unique series allocated atomically; no duplicate number; failed transaction does not partially issue |
+| SC-29 | A quotation is printed, then its company address/terms/logo changes | Previously issued/archived version remains unchanged; new document uses the current template version |
+| SC-30 | Customer GSTIN is stale or fails format check but authorised override is needed | Warning remains visible; override requires reason, supporting evidence and immutable audit trail |
+| SC-31 | Credit invoice has the configured 2% surcharge, another exceeds six months, and sister-firm transfer is exempt | Policy applies only to explicitly matched cases; long-duration term and exception require authorised configuration/approval |
+| SC-32 | Customer in another country orders a different currency and has a country-specific tax/doc profile | Currency, exchange-rate reference, delivery terms and configurable country documents appear; missing legal rules are flagged |
+| SC-33 | Payment QR or official e-invoice QR is absent/invalid | No fake official QR appears; payment QR and official e-invoice artefacts are distinct |
+| SC-34 | Net sales are zero or source data is incomplete for a date range | Percentages display N/A/incomplete with explanation; no divide-by-zero or invented profit |
+| SC-35 | Loan EMI contains principal and interest; machine is purchased; rent deposit is paid | Principal reduces liability, interest is finance cost, machine is asset/depreciated, refundable deposit is not OPEX |
+| SC-36 | Employee deduction is held but not deposited; employer PF/ESIC contribution is due | Employee withheld amount is a liability; employer contribution is cost; due/challan status is visible |
+| SC-37 | Sales rep commission is reversed due to a return/credit note | Incentive formula follows approved policy and adjustment is traceable; payroll is not silently rewritten after lock |
+| SC-38 | Role loses permission while the app is open/offline | Server rejects subsequent restricted mutations; queued action is blocked or quarantined for review, never silently accepted |
+| SC-39 | User guesses another entity's invoice/attachment ID and calls the API directly | Server returns safe denial; no metadata, file bytes or existence details leak |
+| SC-40 | A user logs in with browser password manager enabled | Standard autofill works; opening URL alone does not authenticate; no raw password is stored by app |
+| SC-41 | Failed login/MFA, expired session, lost phone or employee departure | Rate limit/lockout works; owner can revoke sessions; sensitive routes require active permission and MFA as configured |
+| SC-42 | Device works offline, submits a payment/stock move, reconnects and retries | Idempotency prevents duplicate posting; sync status and failed/conflicted actions are visible |
+| SC-43 | Two devices edit same master or complete a batch while offline | Version conflict is explicit; append-only movements are not silently overwritten |
+| SC-44 | Backup export/import contains corrupted data or untrusted records | Checksum/schema validation fails safely; restore preview and high-privilege approval are required |
+| SC-45 | Scheduled backup fails or R2 denies access | Owner sees alert/status, retry and remediation; success is not falsely reported |
+| SC-46 | Dashboard filter selects sister entity but user only has Main permission | Entity selector does not reveal sister records; API independently enforces scope |
+| SC-47 | User exports filtered report or quote/invoice | Export matches authorised filters, records export audit, and does not disclose internal margins or other entity data |
+| SC-48 | UI is used at 320px, landscape, square, 200% zoom, dark mode or with software keyboard open | Forms/action buttons remain visible/reachable; no overlap or clipped critical content; keyboard/touch usage works |
+| SC-49 | An issued record is marked void or a batch is reversed | Number/history remains reserved; inverse movement and link to reason/user/time are recorded |
+| SC-50 | A period is locked and user tries a direct API edit or backdated posting | Server blocks it regardless of UI and logs the attempt; approved unlock requires reason and audit |
+
+### 14.15 Production bootstrap and deployment evidence
+
+At delivery, provide a redacted implementation report with: repository audit findings; architecture decisions; migrations applied per environment; module/requirement status; API/role/entity test matrix; finance test dataset and reconciliations; responsive viewport report; accessibility results; dependency/secrets/security scan results; backup and restore evidence; known limitations; exact Cloudflare resource names by environment (no secret values); production URL actually deployed and browser-smoke-tested; rollback instructions; and a list of decisions still requiring owner/CA/legal input. Do not include passwords, recovery codes, API tokens, customer tax data or employee personal data in the report.
+
+## 15. Complete reusable MJS source and sample input (included for portability)
+
+The production app must use the renderer through an authenticated server-side adapter and must not treat the sample as production information. These source listings are included here so the team can share one Markdown reference. The exact standalone files are also supplied alongside this document. Keep the fenced MJS and JSON listings byte-for-byte in sync with those standalone files when either is changed.
+
+### 15.1 Run the standalone HTML renderer
+
+Requires a maintained Node.js LTS release. No third-party npm dependencies are required for this reference renderer.
+
+```bash
+node scripts/documents/Adalaj_Quotation_Invoice_Engine.mjs scripts/documents/examples/Adalaj_Quotation_Invoice_Example.json ./dist/example-quotation.html
+```
+
+Open the generated HTML in a browser to preview or print/save to PDF. This sample is a draft quotation with fictional information, not a valid issued invoice. For a production document, the authenticated backend must allocate the official number, determine approved tax treatment, persist the exact issued snapshot, authorize the user and audit the operation.
+
+### 15.2 Complete `Adalaj_Quotation_Invoice_Engine.mjs`
+
+```javascript
+/**
+ * Reusable, dependency-free quotation/invoice HTML renderer.
+ *
+ * Usage:
+ *   node Adalaj_Quotation_Invoice_Engine.mjs Adalaj_Quotation_Invoice_Example.json ./dist/example.html
+ *
+ * IMPORTANT:
+ * - This is a document renderer/reference module, NOT an accounting system.
+ * - The authenticated backend must validate permissions, calculate/approve tax treatment,
+ *   allocate a unique document number atomically, persist an immutable issued snapshot,
+ *   and audit issue/void/credit-note/print/export actions.
+ * - Money values use integer minor units (INR: paise). Do not pass floating-point rupee amounts.
+ * - Invoice numbers are supplied by the backend. This module never creates official numbers.
+ * - Use official GST/e-invoice/IRN/QR services where applicable. Do not forge government IDs.
+ */
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { dirname, resolve, basename } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const QUANTITY_SCALE = 1_000_000n; // quantity precision: up to 6 decimal places
+const BPS_DENOMINATOR = 10_000n;  // 10,000 basis points = 100%
+
+const DOCUMENT_TITLES = Object.freeze({
+  quotation: 'Quotation',
+  proforma_invoice: 'Pro Forma Invoice',
+  sales_invoice: 'Tax Invoice',
+  export_invoice: 'Commercial / Export Invoice',
+  delivery_challan: 'Delivery Challan',
+  packing_list: 'Packing List',
+  credit_note: 'Credit Note',
+  debit_note: 'Debit Note',
+  receipt: 'Receipt',
+  statement: 'Account Statement',
+});
+
+function htmlEscape(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[char]);
+}
+
+function asBigIntInteger(value, fieldName, { min = null, max = null } = {}) {
+  if (typeof value === 'bigint') {
+    if (min !== null && value < BigInt(min)) throw new TypeError(`${fieldName} is below its allowed minimum`);
+    if (max !== null && value > BigInt(max)) throw new TypeError(`${fieldName} is above its allowed maximum`);
+    return value;
+  }
+  if (!(typeof value === 'number' && Number.isSafeInteger(value)) && !(typeof value === 'string' && /^-?\d+$/.test(value))) {
+    throw new TypeError(`${fieldName} must be an integer minor-unit value`);
+  }
+  const result = BigInt(value);
+  if (min !== null && result < BigInt(min)) throw new TypeError(`${fieldName} is below its allowed minimum`);
+  if (max !== null && result > BigInt(max)) throw new TypeError(`${fieldName} is above its allowed maximum`);
+  return result;
+}
+
+function roundedDivide(numerator, denominator) {
+  if (denominator <= 0n) throw new RangeError('Denominator must be positive');
+  if (numerator < 0n) return -roundedDivide(-numerator, denominator);
+  return (numerator + denominator / 2n) / denominator;
+}
+
+function quantityToScaledInt(value, fieldName = 'quantity') {
+  const raw = String(value ?? '');
+  const match = raw.match(/^(\d+)(?:\.(\d{1,6}))?$/);
+  if (!match) throw new TypeError(`${fieldName} must be a positive decimal with at most 6 decimal places`);
+  const fractional = (match[2] ?? '').padEnd(6, '0');
+  const scaled = BigInt(match[1]) * QUANTITY_SCALE + BigInt(fractional || '0');
+  if (scaled <= 0n) throw new RangeError(`${fieldName} must be greater than zero`);
+  return scaled;
+}
+
+function currencyDigits(currencyCode, locale = 'en-IN', explicitDigits) {
+  if (Number.isInteger(explicitDigits) && explicitDigits >= 0 && explicitDigits <= 4) return explicitDigits;
+  try {
+    return new Intl.NumberFormat(locale, { style: 'currency', currency: currencyCode }).resolvedOptions().maximumFractionDigits;
+  } catch {
+    throw new TypeError(`Invalid currency code: ${currencyCode}`);
+  }
+}
+
+function formatMoney(minor, currencyCode, locale, digits) {
+  const value = Number(minor) / (10 ** digits);
+  if (!Number.isFinite(value)) return `${currencyCode} ${String(minor)}`;
+  return new Intl.NumberFormat(locale, {
+    style: 'currency', currency: currencyCode,
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(value);
+}
+
+function formatQuantity(quantity, locale = 'en-IN') {
+  const numeric = Number(quantity);
+  if (!Number.isFinite(numeric)) return htmlEscape(quantity);
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 6 }).format(numeric);
+}
+
+function formatDate(value, locale = 'en-IN') {
+  if (!value) return '—';
+  const date = new Date(`${String(value).slice(0, 10)}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return htmlEscape(value);
+  return new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(date);
+}
+
+function safeAssetSrc(value) {
+  if (!value || typeof value !== 'string') return '';
+  // Allow only same-origin root-relative asset paths or HTTPS URLs. No data:, javascript: or protocol-relative URLs.
+  if (value.startsWith('/') && !value.startsWith('//') && !value.includes('\\') && !value.includes('..')) return value;
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol === 'https:' && !parsed.username && !parsed.password) return parsed.href;
+  } catch { /* not an absolute URL */ }
+  return '';
+}
+
+function safeQrSrc(value) {
+  if (!value || typeof value !== 'string') return '';
+  // QR images must be generated by the app/backend and supplied as a base64 raster or authorised same-origin asset.
+  if (/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(value)) return value;
+  return safeAssetSrc(value);
+}
+
+function normalizeBps(value, fieldName) {
+  const bps = asBigIntInteger(value ?? 0, fieldName, { min: 0, max: 100_000 });
+  return bps;
+}
+
+function calculateTax(taxableMinor, taxDefinition, digits) {
+  const label = String(taxDefinition.label ?? 'Tax');
+  const rateBps = normalizeBps(taxDefinition.rateBps ?? 0, `${label} rateBps`);
+  const amountMinor = taxDefinition.amountMinorOverride !== undefined
+    ? asBigIntInteger(taxDefinition.amountMinorOverride, `${label} amountMinorOverride`, { min: 0 })
+    : roundedDivide(taxableMinor * rateBps, BPS_DENOMINATOR);
+  return {
+    label,
+    rateBps,
+    amountMinor,
+    ratePercent: Number(rateBps) / 100,
+  };
+}
+
+function calculateItem(item, digits, prefix = 'line item') {
+  const quantity = quantityToScaledInt(item.quantity, `${prefix} quantity`);
+  const unitPriceMinor = asBigIntInteger(item.unitPriceMinor, `${prefix} unitPriceMinor`, { min: 0 });
+  const grossMinor = roundedDivide(unitPriceMinor * quantity, QUANTITY_SCALE);
+  let discountMinor;
+  if (item.discountMinor !== undefined) {
+    discountMinor = asBigIntInteger(item.discountMinor, `${prefix} discountMinor`, { min: 0, max: grossMinor });
+  } else {
+    const discountBps = normalizeBps(item.discountBps ?? 0, `${prefix} discountBps`);
+    if (discountBps > BPS_DENOMINATOR) throw new RangeError(`${prefix} discount cannot exceed 100%`);
+    discountMinor = roundedDivide(grossMinor * discountBps, BPS_DENOMINATOR);
+  }
+  const taxableMinor = grossMinor - discountMinor;
+  const taxes = (Array.isArray(item.taxes) ? item.taxes : []).map((tax) => calculateTax(taxableMinor, tax, digits));
+  const taxMinor = taxes.reduce((sum, tax) => sum + tax.amountMinor, 0n);
+  return { quantity, grossMinor, discountMinor, taxableMinor, taxes, taxMinor, totalMinor: taxableMinor + taxMinor };
+}
+
+/** Calculates totals using integer minor units; returns BigInt totals for safe downstream arithmetic. */
+export function calculateDocumentTotals(document, company = {}) {
+  const currencyCode = document.currencyCode || company.currencyCode || 'INR';
+  const locale = document.locale || company.locale || 'en-IN';
+  const digits = currencyDigits(currencyCode, locale, document.currencyMinorDigits ?? company.currencyMinorDigits);
+  const lines = (Array.isArray(document.lines) ? document.lines : []).map((item, index) => ({
+    source: item,
+    calculated: calculateItem(item, digits, `line ${index + 1}`),
+  }));
+  const charges = (Array.isArray(document.charges) ? document.charges : []).map((charge, index) => {
+    const amountMinor = asBigIntInteger(charge.amountMinor, `charge ${index + 1} amountMinor`, { min: 0 });
+    const taxes = (Array.isArray(charge.taxes) ? charge.taxes : []).map((tax) => calculateTax(amountMinor, tax, digits));
+    return { source: charge, amountMinor, taxes, taxMinor: taxes.reduce((sum, tax) => sum + tax.amountMinor, 0n) };
+  });
+  const subtotalMinor = lines.reduce((sum, line) => sum + line.calculated.grossMinor, 0n);
+  const discountMinor = lines.reduce((sum, line) => sum + line.calculated.discountMinor, 0n);
+  const lineTaxableMinor = lines.reduce((sum, line) => sum + line.calculated.taxableMinor, 0n);
+  const chargeMinor = charges.reduce((sum, charge) => sum + charge.amountMinor, 0n);
+  const taxableMinor = lineTaxableMinor + chargeMinor;
+  const lineTaxMinor = lines.reduce((sum, line) => sum + line.calculated.taxMinor, 0n);
+  const chargeTaxMinor = charges.reduce((sum, charge) => sum + charge.taxMinor, 0n);
+  const taxMinor = lineTaxMinor + chargeTaxMinor;
+  const totalMinor = taxableMinor + taxMinor;
+  const receiptsMinor = asBigIntInteger(document.receiptsAppliedMinor ?? 0, 'receiptsAppliedMinor', { min: 0 });
+  const creditsMinor = asBigIntInteger(document.creditsAppliedMinor ?? 0, 'creditsAppliedMinor', { min: 0 });
+  const withholdingMinor = asBigIntInteger(document.withholdingRecognisedMinor ?? 0, 'withholdingRecognisedMinor', { min: 0 });
+  const dueMinor = totalMinor - receiptsMinor - creditsMinor - withholdingMinor;
+
+  const taxSummaryMap = new Map();
+  const allTaxes = [...lines.flatMap((line) => line.calculated.taxes), ...charges.flatMap((charge) => charge.taxes)];
+  for (const tax of allTaxes) {
+    const key = `${tax.label}|${tax.rateBps}`;
+    const current = taxSummaryMap.get(key) ?? { label: tax.label, rateBps: tax.rateBps, amountMinor: 0n };
+    current.amountMinor += tax.amountMinor;
+    taxSummaryMap.set(key, current);
+  }
+
+  return {
+    currencyCode, locale, digits, lines, charges,
+    subtotalMinor, discountMinor, taxableMinor, chargeMinor, taxMinor, totalMinor,
+    receiptsMinor, creditsMinor, withholdingMinor, dueMinor,
+    taxSummary: [...taxSummaryMap.values()],
+  };
+}
+
+function rowsForTaxSummary(totals) {
+  if (totals.taxSummary.length === 0) return '';
+  return `<section class="tax-summary"><h3>Tax summary</h3><table><thead><tr><th>Tax</th><th>Rate</th><th class="num">Amount</th></tr></thead><tbody>${totals.taxSummary.map((tax) => `<tr><td>${htmlEscape(tax.label)}</td><td>${(Number(tax.rateBps) / 100).toFixed(2).replace(/\.00$/, '')}%</td><td class="num">${formatMoney(tax.amountMinor, totals.currencyCode, totals.locale, totals.digits)}</td></tr>`).join('')}</tbody></table></section>`;
+}
+
+function renderParty(party, heading) {
+  if (!party) return '';
+  const addressLines = Array.isArray(party.addressLines) ? party.addressLines : [];
+  const contactLines = [party.contactName, party.phone, party.email].filter(Boolean);
+  const identifiers = Array.isArray(party.identifiers) ? party.identifiers : [];
+  return `<section class="party"><h3>${htmlEscape(heading)}</h3><strong>${htmlEscape(party.legalName || party.name || '')}</strong>${party.tradeName ? `<div>${htmlEscape(party.tradeName)}</div>` : ''}${addressLines.map((line) => `<div>${htmlEscape(line)}</div>`).join('')}${[party.city, party.stateOrProvince, party.postalCode, party.country].filter(Boolean).length ? `<div>${htmlEscape([party.city, party.stateOrProvince, party.postalCode, party.country].filter(Boolean).join(', '))}</div>` : ''}${contactLines.map((line) => `<div>${htmlEscape(line)}</div>`).join('')}${identifiers.map((identifier) => `<div><span class="muted">${htmlEscape(identifier.label)}:</span> ${htmlEscape(identifier.value)}</div>`).join('')}</section>`;
+}
+
+function visibleRegistrations(company, issueDate) {
+  const list = Array.isArray(company.registrations) ? company.registrations : [];
+  return list.filter((item) => {
+    if (item.displayOnDocument !== true || !item.label || !item.value) return false;
+    if (item.validUntil && issueDate && String(item.validUntil) < String(issueDate).slice(0, 10)) return false;
+    return true;
+  });
+}
+
+function imageTag(src, alt, className = '') {
+  const safe = safeAssetSrc(src);
+  return safe ? `<img class="${htmlEscape(className)}" src="${htmlEscape(safe)}" alt="${htmlEscape(alt)}">` : '';
+}
+
+function renderLineRow(item, calculated, index, totals) {
+  const taxesText = calculated.taxes.map((tax) => `${tax.label} ${(Number(tax.rateBps) / 100).toFixed(2).replace(/\.00$/, '')}%`).join(', ');
+  const pack = [item.packSize, item.packagingDescription, item.batchNumber ? `Batch ${item.batchNumber}` : ''].filter(Boolean).join(' · ');
+  return `<tr><td class="center">${index + 1}</td><td><strong>${htmlEscape(item.description || item.name || 'Item')}</strong>${item.sku ? `<div class="muted">SKU: ${htmlEscape(item.sku)}</div>` : ''}${item.hsnSac ? `<div class="muted">HSN/SAC: ${htmlEscape(item.hsnSac)}</div>` : ''}${pack ? `<div class="muted">${htmlEscape(pack)}</div>` : ''}${item.fulfilmentNote ? `<div class="muted">${htmlEscape(item.fulfilmentNote)}</div>` : ''}</td><td class="num">${htmlEscape(formatQuantity(item.quantity, totals.locale))}</td><td>${htmlEscape(item.unit || 'unit')}</td><td class="num">${formatMoney(asBigIntInteger(item.unitPriceMinor, 'unitPriceMinor', { min: 0 }), totals.currencyCode, totals.locale, totals.digits)}</td><td class="num">${calculated.discountMinor ? formatMoney(calculated.discountMinor, totals.currencyCode, totals.locale, totals.digits) : '—'}</td><td>${htmlEscape(taxesText || item.taxTreatmentLabel || '—')}</td><td class="num">${formatMoney(calculated.totalMinor, totals.currencyCode, totals.locale, totals.digits)}</td></tr>`;
+}
+
+function renderChargeRow(charge, totals) {
+  return `<tr><td>${htmlEscape(charge.source.label || 'Additional charge')}</td><td class="num">${formatMoney(charge.amountMinor, totals.currencyCode, totals.locale, totals.digits)}</td></tr>`;
+}
+
+/** Render quotation or invoice data as self-contained responsive/print-ready HTML. */
+export function renderDocumentHtml({ company, customer, document }) {
+  if (!company || !document) throw new TypeError('company and document are required');
+  const type = String(document.type || 'quotation');
+  const title = DOCUMENT_TITLES[type];
+  if (!title) throw new TypeError(`Unsupported document type: ${type}`);
+  if (!document.documentNumber) throw new TypeError('document.documentNumber is required; the backend must allocate it');
+  if (!Array.isArray(document.lines) || document.lines.length === 0) throw new TypeError('At least one document line is required');
+
+  const totals = calculateDocumentTotals(document, company);
+  const issueDate = document.issueDate || '';
+  const logo = safeAssetSrc(company.logoUrl);
+  const qrCode = safeQrSrc(document.qrCodeDataUri || document.paymentQrUrl || '');
+  const signature = safeAssetSrc(company.signatureUrl);
+  const stamp = safeAssetSrc(company.stampUrl);
+  const registrations = visibleRegistrations(company, issueDate);
+  const terms = Array.isArray(document.terms) ? document.terms : [];
+  const notes = Array.isArray(document.notes) ? document.notes : [];
+  const references = [
+    ['Customer PO', document.customerPurchaseOrderNumber],
+    ['Order reference', document.salesOrderNumber],
+    ['Place of supply', document.placeOfSupply],
+    ['Dispatch / shipment', document.shipmentReference],
+    ['Incoterms', document.incoterms],
+  ].filter(([, value]) => value);
+  const companyName = company.legalName || company.displayName || 'Company';
+  const docLabel = document.status === 'draft' ? `${title} · DRAFT / NOT ISSUED` : title;
+  const totalsTitle = type === 'quotation' ? 'Quotation total' : (type === 'delivery_challan' || type === 'packing_list' ? 'Reference value (if supplied)' : 'Grand total');
+  const shouldShowDue = !['quotation', 'delivery_challan', 'packing_list', 'statement'].includes(type);
+  const meta = [
+    ['Document no.', document.documentNumber], ['Issue date', issueDate ? formatDate(issueDate, totals.locale) : '—'],
+    ['Due date', document.dueDate ? formatDate(document.dueDate, totals.locale) : '—'],
+    ['Valid until', document.validUntil ? formatDate(document.validUntil, totals.locale) : '—'],
+    ['Payment terms', document.paymentTermsLabel],
+    ['Fulfilment / delivery date', document.promisedFulfilmentDate ? formatDate(document.promisedFulfilmentDate, totals.locale) : ''],
+    ['Currency', totals.currencyCode],
+  ].filter(([, value]) => value);
+
+  const headerLogo = logo ? `<img class="brand-logo" src="${htmlEscape(logo)}" alt="${htmlEscape(companyName)} logo">` : '';
+  const taxIdentifiers = registrations.map((item) => `<div><span class="muted">${htmlEscape(item.label)}:</span> ${htmlEscape(item.value)}</div>`).join('');
+  const totalsRows = [
+    ['Subtotal', totals.subtotalMinor],
+    ...(totals.discountMinor ? [['Discounts', -totals.discountMinor]] : []),
+    ...(totals.chargeMinor ? [['Additional charges', totals.chargeMinor]] : []),
+    ['Taxable value', totals.taxableMinor],
+    ...(totals.taxMinor ? [['Total tax', totals.taxMinor]] : []),
+    [totalsTitle, totals.totalMinor, 'grand'],
+  ].map(([label, amount, css]) => `<tr class="${css || ''}"><th>${htmlEscape(label)}</th><td class="num">${formatMoney(amount, totals.currencyCode, totals.locale, totals.digits)}</td></tr>`).join('');
+
+  const receiptRows = (totals.receiptsMinor || totals.creditsMinor || totals.withholdingMinor) ? `<div class="payment-summary"><h3>Settlement summary</h3><table><tbody>${totals.receiptsMinor ? `<tr><th>Receipts applied</th><td class="num">${formatMoney(totals.receiptsMinor, totals.currencyCode, totals.locale, totals.digits)}</td></tr>` : ''}${totals.creditsMinor ? `<tr><th>Credits applied</th><td class="num">${formatMoney(totals.creditsMinor, totals.currencyCode, totals.locale, totals.digits)}</td></tr>` : ''}${totals.withholdingMinor ? `<tr><th>Withholding recognised (configured)</th><td class="num">${formatMoney(totals.withholdingMinor, totals.currencyCode, totals.locale, totals.digits)}</td></tr>` : ''}<tr class="grand"><th>Calculated balance</th><td class="num">${formatMoney(totals.dueMinor, totals.currencyCode, totals.locale, totals.digits)}</td></tr></tbody></table><p class="muted small">Use the backend's approved allocation and accounting rules before treating withholding as settled.</p></div>` : '';
+
+  const sellerBank = Array.isArray(company.paymentDetails) ? company.paymentDetails : [];
+  const bankBlock = sellerBank.length ? `<section class="payment-details"><h3>Payment details</h3>${sellerBank.map((item) => `<div><span class="muted">${htmlEscape(item.label)}:</span> ${htmlEscape(item.value)}</div>`).join('')}</section>` : '';
+  const taxIds = [company.gstin ? ['GSTIN', company.gstin] : null, company.pan ? ['PAN', company.pan] : null, company.cin ? ['CIN', company.cin] : null, company.iec ? ['IEC', company.iec] : null].filter(Boolean);
+  const docSnapshotHash = document.snapshotHash ? `<div class="snapshot-hash">Document snapshot: ${htmlEscape(document.snapshotHash)}</div>` : '';
+
+  return `<!doctype html>
+<html lang="${htmlEscape(document.language || company.language || 'en')}" dir="${document.direction === 'rtl' ? 'rtl' : 'ltr'}">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${htmlEscape(docLabel)} ${htmlEscape(document.documentNumber)}</title>
+<meta name="color-scheme" content="light">
+<style>
+:root{font-family:Arial,Helvetica,sans-serif;color:#17202b;background:#f0f2f5;font-synthesis:none;text-rendering:optimizeLegibility}*{box-sizing:border-box}body{margin:0;padding:clamp(8px,2vw,24px);line-height:1.42}.toolbar{max-width:210mm;margin:0 auto 12px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}.toolbar button{border:0;border-radius:7px;background:#8b1d24;color:#fff;font-weight:700;padding:10px 15px;cursor:pointer}.sheet{max-width:210mm;min-height:297mm;margin:0 auto;background:#fff;padding:clamp(16px,3vw,32px);box-shadow:0 5px 24px #00000012}.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;border-bottom:3px solid #8b1d24;padding-bottom:16px}.brand{display:flex;gap:14px;align-items:flex-start;min-width:0}.brand-logo{max-width:110px;max-height:82px;object-fit:contain}.company-name{font-size:19px;font-weight:800;overflow-wrap:anywhere}.muted{color:#596474;font-size:.91em}.doc-title{text-align:right;min-width:150px}.doc-title h1{font-size:clamp(20px,3vw,29px);margin:0;color:#8b1d24}.doc-no{font-weight:700;overflow-wrap:anywhere}.parties{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;margin:20px 0}.party{min-width:0;overflow-wrap:anywhere}.party h3,.tax-summary h3,.payment-details h3,.payment-summary h3{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:#8b1d24;margin:0 0 8px}.party strong{display:block;margin-bottom:5px}.meta-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 14px;margin:12px 0 18px}.meta-cell{border-bottom:1px solid #e4e7eb;padding:7px 0;min-width:0;overflow-wrap:anywhere}.meta-label{display:block;color:#667080;font-size:11px}.meta-value{display:block;font-weight:600}.table-wrap{width:100%;overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:9px 7px;border-bottom:1px solid #e5e7eb;vertical-align:top;text-align:left}thead th{background:#f7f0f0;color:#692027;border-bottom:1px solid #dec4c6;font-size:10px;text-transform:uppercase;letter-spacing:.04em}td.num,th.num{text-align:right;white-space:nowrap}.center{text-align:center}.muted.small{font-size:10px}.line-table td:nth-child(2){min-width:155px}.bottom-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.75fr);gap:22px;margin-top:20px}.totals{width:100%;max-width:380px;margin-left:auto}.totals th{font-weight:500}.totals .grand th,.totals .grand td,.grand th,.grand td{font-weight:800;font-size:14px;background:#fbf2f2;border-top:2px solid #8b1d24}.tax-summary,.payment-summary,.payment-details{margin-top:18px}.terms{white-space:normal;overflow-wrap:anywhere}.terms h3{font-size:12px;color:#8b1d24;text-transform:uppercase;letter-spacing:.07em}.terms ol,.terms ul{padding-left:20px;margin-top:6px}.notes{margin-top:14px;overflow-wrap:anywhere}.qr-area{display:flex;gap:12px;align-items:center;justify-content:flex-end;margin-top:12px}.qr-area img{width:100px;height:100px;object-fit:contain}.signature-area{display:flex;gap:14px;justify-content:flex-end;align-items:flex-end;margin-top:22px;flex-wrap:wrap}.signature-area img{max-width:130px;max-height:70px;object-fit:contain}.signature-label{font-size:11px;text-align:center;min-width:120px;border-top:1px solid #aeb5bf;padding-top:6px}.footer{border-top:1px solid #e5e7eb;margin-top:26px;padding-top:12px;color:#596474;font-size:10px;overflow-wrap:anywhere}.snapshot-hash{font-size:9px;color:#798291;margin-top:8px;overflow-wrap:anywhere}.status-draft{margin:10px 0;padding:8px 10px;border:1px solid #be8a2c;background:#fff8e5;color:#684400;font-weight:700;font-size:12px}.certificate-line{overflow-wrap:anywhere}@media(max-width:620px){body{padding:0;background:#fff}.sheet{padding:16px;box-shadow:none;min-height:auto}.topbar{flex-direction:column}.doc-title{text-align:left}.parties{grid-template-columns:1fr}.meta-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.bottom-grid{grid-template-columns:1fr}.totals{max-width:none}.toolbar{padding:8px}.line-table{min-width:720px}.qr-area{justify-content:flex-start}}@media print{@page{size:A4;margin:10mm}body{background:#fff;padding:0;color:#111}.toolbar{display:none!important}.sheet{max-width:none;min-height:0;margin:0;padding:0;box-shadow:none}.topbar,.parties,.meta-grid,.bottom-grid,.signature-area{break-inside:avoid}tr{break-inside:avoid}thead{display:table-header-group}.footer{break-inside:avoid}a{color:inherit;text-decoration:none}}
+</style>
+</head>
+<body>
+<div class="toolbar"><button type="button" onclick="window.print()">Print / Save as PDF</button></div>
+<main class="sheet">
+<header class="topbar"><div class="brand">${headerLogo}<div><div class="company-name">${htmlEscape(companyName)}</div>${company.tradeName ? `<div>${htmlEscape(company.tradeName)}</div>` : ''}${(company.addressLines || []).map((line) => `<div>${htmlEscape(line)}</div>`).join('')}${[company.city, company.stateOrProvince, company.postalCode, company.country].filter(Boolean).length ? `<div>${htmlEscape([company.city, company.stateOrProvince, company.postalCode, company.country].filter(Boolean).join(', '))}</div>` : ''}${company.phone ? `<div>Phone: ${htmlEscape(company.phone)}</div>` : ''}${company.email ? `<div>Email: ${htmlEscape(company.email)}</div>` : ''}${company.website ? `<div>${htmlEscape(company.website)}</div>` : ''}${taxIds.map(([label, value]) => `<div><span class="muted">${label}:</span> ${htmlEscape(value)}</div>`).join('')}${taxIdentifiers}</div></div><div class="doc-title"><h1>${htmlEscape(docLabel)}</h1><div class="doc-no">${htmlEscape(document.documentNumber)}</div>${document.status === 'draft' ? '<div class="status-draft">DRAFT — NOT A VALID ISSUED TAX DOCUMENT</div>' : ''}${document.originalDocumentNumber ? `<div class="muted">Original document: ${htmlEscape(document.originalDocumentNumber)}</div>` : ''}</div></header>
+<div class="parties">${renderParty(customer, type === 'quotation' ? 'Quotation for' : 'Bill to')}${document.shipTo ? renderParty(document.shipTo, 'Ship to / Deliver to') : ''}</div>
+<section class="meta-grid">${meta.map(([label, value]) => `<div class="meta-cell"><span class="meta-label">${htmlEscape(label)}</span><span class="meta-value">${htmlEscape(value)}</span></div>`).join('')}${references.map(([label, value]) => `<div class="meta-cell"><span class="meta-label">${htmlEscape(label)}</span><span class="meta-value">${htmlEscape(value)}</span></div>`).join('')}</section>
+<div class="table-wrap"><table class="line-table"><thead><tr><th>#</th><th>Description / SKU</th><th class="num">Qty</th><th>Unit</th><th class="num">Unit price</th><th class="num">Discount</th><th>Tax / treatment</th><th class="num">Line total</th></tr></thead><tbody>${totals.lines.map(({ source, calculated }, index) => renderLineRow(source, calculated, index, totals)).join('')}</tbody></table></div>
+${totals.charges.length ? `<section class="tax-summary"><h3>Additional charges</h3><table><tbody>${totals.charges.map((charge) => renderChargeRow(charge, totals)).join('')}</tbody></table></section>` : ''}
+<div class="bottom-grid"><div><div class="terms"><h3>Terms and conditions</h3>${terms.length ? `<ol>${terms.map((term) => `<li>${htmlEscape(term)}</li>`).join('')}</ol>` : '<p class="muted">No terms have been configured for this document.</p>'}</div>${notes.length ? `<div class="notes"><strong>Notes</strong><ul>${notes.map((note) => `<li>${htmlEscape(note)}</li>`).join('')}</ul></div>` : ''}${document.amountInWords ? `<p><strong>Amount in words:</strong> ${htmlEscape(document.amountInWords)}</p>` : ''}${bankBlock}${receiptRows}</div><div><table class="totals"><tbody>${totalsRows}</tbody></table>${shouldShowDue && !receiptRows ? `<p class="muted small">Balance due is maintained by the accounting/payment-allocation workflow; this document total does not by itself prove payment receipt.</p>` : ''}${qrCode ? `<div class="qr-area"><div class="muted">${htmlEscape(document.qrCaption || 'Scan QR')}</div><img src="${htmlEscape(qrCode)}" alt="${htmlEscape(document.qrCaption || 'QR code')}"></div>` : ''}</div></div>
+<div class="signature-area">${signature ? `<div>${imageTag(signature, 'Authorised signature')}<div class="signature-label">Authorised signatory</div></div>` : ''}${stamp ? `<div>${imageTag(stamp, 'Company stamp')}<div class="signature-label">Company stamp</div></div>` : ''}${company.authorisedSignatoryName ? `<div class="signature-label">${htmlEscape(company.authorisedSignatoryName)}<br>Authorised signatory</div>` : ''}</div>
+<footer class="footer">${company.footerText ? `<div>${htmlEscape(company.footerText)}</div>` : ''}${document.disclaimer ? `<div>${htmlEscape(document.disclaimer)}</div>` : ''}${docSnapshotHash}<div>This document was rendered from application data. The backend must determine whether it is a valid issued document, and apply the legally approved tax/document rules before issuance.</div></footer>
+</main></body></html>`;
+}
+
+function safeFileStem(value) {
+  return String(value || 'document').replace(/[^a-zA-Z0-9._-]+/g, '_').replace(/^\.+/, '').slice(0, 100) || 'document';
+}
+
+async function runCli() {
+  const inputPath = process.argv[2];
+  if (!inputPath) {
+    process.stderr.write('Usage: node Adalaj_Quotation_Invoice_Engine.mjs <input.json> [output.html]\n');
+    process.exitCode = 2;
+    return;
+  }
+  const absoluteInput = resolve(inputPath);
+  const raw = await readFile(absoluteInput, 'utf8');
+  const data = JSON.parse(raw);
+  const html = renderDocumentHtml(data);
+  const requestedOutput = process.argv[3];
+  const defaultName = `${safeFileStem(data.document?.documentNumber || data.document?.type || basename(inputPath, '.json'))}.html`;
+  const outputPath = resolve(requestedOutput || resolve('dist', defaultName));
+  await mkdir(dirname(outputPath), { recursive: true });
+  await writeFile(outputPath, html, 'utf8');
+  process.stdout.write(`Rendered HTML document: ${outputPath}\n`);
+  process.stdout.write('Before issuing: verify backend numbering, permissions, tax treatment, approved terms and immutable document snapshot.\n');
+}
+
+const invokedPath = process.argv[1] ? resolve(process.argv[1]) : '';
+if (invokedPath && invokedPath === resolve(fileURLToPath(import.meta.url))) {
+  runCli().catch((error) => {
+    process.stderr.write(`Document render failed: ${error instanceof Error ? error.message : 'Unknown error'}\n`);
+    process.exitCode = 1;
+  });
+}
+```
+
+### 15.3 Complete sample data `Adalaj_Quotation_Invoice_Example.json`
+
+```json
+{
+  "company": {
+    "legalName": "DEMO ENTITY — REPLACE WITH VERIFIED LEGAL NAME",
+    "displayName": "Company Display Name",
+    "tradeName": "Trading / Brand Name (optional)",
+    "addressLines": ["Registered address line 1", "Registered address line 2"],
+    "city": "City",
+    "stateOrProvince": "State / Province",
+    "postalCode": "POSTCODE",
+    "country": "India",
+    "phone": "",
+    "email": "",
+    "website": "",
+    "gstin": "",
+    "pan": "",
+    "cin": "",
+    "iec": "",
+    "currencyCode": "INR",
+    "locale": "en-IN",
+    "logoUrl": "/assets/company-logo.svg",
+    "signatureUrl": "",
+    "stampUrl": "",
+    "authorisedSignatoryName": "Authorised signatory (configure)",
+    "registrations": [
+      {
+        "label": "Certificate / Registration",
+        "value": "",
+        "displayOnDocument": false,
+        "validUntil": ""
+      }
+    ],
+    "paymentDetails": [
+      { "label": "Bank name", "value": "Configure verified bank details" },
+      { "label": "Account / UPI", "value": "Configure verified payment details" }
+    ],
+    "footerText": "Template preview only. Replace demo data and have your accountant/CA approve the document and tax configuration before production use."
+  },
+  "customer": {
+    "legalName": "DEMO CUSTOMER — NOT A REAL CUSTOMER",
+    "tradeName": "Customer / Institution Name",
+    "addressLines": ["Billing address line 1", "Billing address line 2"],
+    "city": "Customer city",
+    "stateOrProvince": "Customer state",
+    "postalCode": "POSTCODE",
+    "country": "India",
+    "contactName": "Accounts department",
+    "phone": "",
+    "email": "",
+    "identifiers": [
+      { "label": "GSTIN", "value": "" },
+      { "label": "Customer code", "value": "DEMO-CUSTOMER" }
+    ]
+  },
+  "document": {
+    "type": "quotation",
+    "status": "draft",
+    "documentNumber": "DRAFT-QTN-EXAMPLE-0001",
+    "issueDate": "2026-10-13",
+    "validUntil": "2026-10-27",
+    "dueDate": "",
+    "currencyCode": "INR",
+    "currencyMinorDigits": 2,
+    "locale": "en-IN",
+    "language": "en",
+    "customerPurchaseOrderNumber": "",
+    "salesOrderNumber": "",
+    "placeOfSupply": "Configure after validating transaction details",
+    "shipmentReference": "",
+    "incoterms": "",
+    "paymentTermsLabel": "Example only — configure approved payment terms",
+    "promisedFulfilmentDate": "2026-10-20",
+    "lines": [
+      {
+        "sku": "DEMO-SKU-100G",
+        "description": "Example spice product — 100g branded pack",
+        "hsnSac": "",
+        "quantity": "20",
+        "unit": "pack",
+        "unitPriceMinor": 45000,
+        "discountBps": 500,
+        "taxTreatmentLabel": "Tax components are illustrative and must be confirmed",
+        "taxes": [
+          { "label": "CGST (example)", "rateBps": 250 },
+          { "label": "SGST (example)", "rateBps": 250 }
+        ],
+        "packSize": "100g",
+        "packagingDescription": "Printed pouch",
+        "batchNumber": "",
+        "fulfilmentNote": "Example delivery note only"
+      }
+    ],
+    "charges": [],
+    "receiptsAppliedMinor": 0,
+    "creditsAppliedMinor": 0,
+    "withholdingRecognisedMinor": 0,
+    "terms": [
+      "This is a draft quotation only and is not a tax invoice or a guarantee of stock availability.",
+      "Price, taxes, credit terms, credit surcharge, delivery schedule and product specifications are subject to approved commercial configuration.",
+      "The quotation becomes an order only after acceptance and authorised order confirmation.",
+      "Any credit-charge rule must be disclosed in the quotation and approved before issue; it must not be silently added at invoice time."
+    ],
+    "notes": [
+      "All names, prices, tax rates and dates in this example are fictional test data.",
+      "The backend must allocate document numbers and persist the immutable issued snapshot."
+    ],
+    "disclaimer": "DEVELOPMENT TEMPLATE — do not issue to a customer before replacing the demo data and confirming all legal/tax details.",
+    "qrCodeDataUri": "",
+    "qrCaption": "Payment QR (add only verified payment QR content)",
+    "snapshotHash": ""
+  }
+}
+```
