@@ -23,8 +23,10 @@ import {
   LogOut,
   Download,
   UserCheck,
+  Building2,
+  Scale,
 } from 'lucide-react';
-import { UserRole, AuthUser, ROLE_PERMISSIONS } from '../../types';
+import { UserRole, AuthUser, ROLE_PERMISSIONS, BusinessEntityId } from '../../types';
 import { db } from '../../lib/storage';
 import { PWAInstallButton } from './PWAInstallButton';
 import { OfflineIndicator } from './OfflineIndicator';
@@ -56,6 +58,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   const activeRole: UserRole = currentUser?.role || 'owner';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [backupToast, setBackupToast] = useState<string | null>(null);
+  const [activeEntity, setActiveEntity] = useState<BusinessEntityId | 'all'>(() => db.getActiveEntityId());
+
+  const handleSelectEntity = (id: BusinessEntityId | 'all') => {
+    setActiveEntity(id);
+    db.setActiveEntityId(id);
+    window.dispatchEvent(new CustomEvent('adalaj:entity_changed', { detail: { entityId: id } }));
+  };
 
   const handleQuickBackup = () => {
     const res = triggerAutomaticJsonBackup(currentUser?.name);
@@ -72,7 +81,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     { id: 'inventory', label: 'Stock & Lots', icon: Boxes },
     { id: 'pos', label: 'Purchase Orders (POs)', icon: FileText },
     { id: 'expenses', label: 'Expenses & Bills', icon: Wallet },
-    { id: 'interfirm_export', label: 'CFA Depot & Exports', icon: Truck },
+    { id: 'interfirm_export', label: 'Entities & Reconciliation', icon: Scale },
     { id: 'advertising', label: 'Ads & E-Commerce', icon: Megaphone },
     { id: 'licences', label: 'Licences & Compliance', icon: ShieldCheck },
     { id: 'floor_mode', label: 'Factory Floor Mode', icon: QrCode, highlight: true },
@@ -149,6 +158,46 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                 Adalaj · Gujarat
               </span>
             </div>
+          </div>
+
+          {/* Dual Legal Entity Architecture Switcher (Section 1 & 7) */}
+          <div className="hidden md:flex items-center p-0.5 rounded-xl border bg-slate-100/90 dark:bg-slate-950/80 dark:border-slate-800 text-xs font-semibold ml-2">
+            <button
+              onClick={() => handleSelectEntity('pvt_ltd')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all cursor-pointer text-[11px] font-bold ${
+                activeEntity === 'pvt_ltd'
+                  ? 'bg-[#9A2229] text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+              }`}
+              title="Adalaj Food Products Pvt. Ltd. (Main Company · Strategic B2B & Modern Trade)"
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              <span>Main Pvt. Ltd.</span>
+            </button>
+            <button
+              onClick={() => handleSelectEntity('sister_prop')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all cursor-pointer text-[11px] font-bold ${
+                activeEntity === 'sister_prop'
+                  ? 'bg-amber-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+              }`}
+              title="Adalaj Distribution & Trading Co. (Sister Firm · Routine Gujarat Distribution)"
+            >
+              <Truck className="w-3.5 h-3.5" />
+              <span>Sister Depot</span>
+            </button>
+            <button
+              onClick={() => handleSelectEntity('all')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all cursor-pointer text-[11px] font-bold ${
+                activeEntity === 'all'
+                  ? 'bg-indigo-700 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+              }`}
+              title="Consolidated Multi-Entity Audit & Reconciliation Cockpit"
+            >
+              <Scale className="w-3.5 h-3.5" />
+              <span>Reconciliation</span>
+            </button>
           </div>
         </div>
 
@@ -429,13 +478,56 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                       setMobileMenuOpen(false);
                       onLogout();
                     }}
-                    className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10"
+                    className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 cursor-pointer"
                     title="Sign Out"
                   >
                     <LogOut className="w-4 h-4" />
                   </button>
                 </div>
               )}
+
+              {/* Mobile Entity Switcher */}
+              <div
+                className={`p-2.5 rounded-xl border text-xs ${
+                  isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+                }`}
+              >
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                  Operating Entity Context
+                </div>
+                <div className="grid grid-cols-3 gap-1">
+                  <button
+                    onClick={() => handleSelectEntity('pvt_ltd')}
+                    className={`p-1.5 rounded-lg text-[10px] font-bold text-center transition ${
+                      activeEntity === 'pvt_ltd'
+                        ? 'bg-[#9A2229] text-white'
+                        : 'bg-slate-200/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    Main Pvt Ltd
+                  </button>
+                  <button
+                    onClick={() => handleSelectEntity('sister_prop')}
+                    className={`p-1.5 rounded-lg text-[10px] font-bold text-center transition ${
+                      activeEntity === 'sister_prop'
+                        ? 'bg-amber-600 text-white'
+                        : 'bg-slate-200/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    Sister Depot
+                  </button>
+                  <button
+                    onClick={() => handleSelectEntity('all')}
+                    className={`p-1.5 rounded-lg text-[10px] font-bold text-center transition ${
+                      activeEntity === 'all'
+                        ? 'bg-indigo-700 text-white'
+                        : 'bg-slate-200/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    Combined
+                  </button>
+                </div>
+              </div>
 
               {/* Quick backup button in drawer */}
               <button

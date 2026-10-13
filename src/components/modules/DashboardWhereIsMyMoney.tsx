@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Wallet,
   Boxes,
@@ -14,9 +14,13 @@ import {
   ShieldAlert,
   ArrowRight,
   ExternalLink,
+  Building2,
+  Truck,
+  Scale,
 } from 'lucide-react';
 import { db } from '../../lib/storage';
 import { formatINR, formatGrams } from '../../lib/format';
+import { BusinessEntityId } from '../../types';
 
 interface DashboardProps {
   onNavigate: (module: string) => void;
@@ -27,16 +31,25 @@ export const DashboardWhereIsMyMoney: React.FC<DashboardProps> = ({
   onNavigate,
   onOpenQuickAdd,
 }) => {
-  const [refreshKey] = useState(0);
+  const [activeEntity, setActiveEntity] = useState<BusinessEntityId | 'all'>(() => db.getActiveEntityId());
 
-  const accounts = db.getAccounts();
+  useEffect(() => {
+    const handler = () => {
+      setActiveEntity(db.getActiveEntityId());
+    };
+    window.addEventListener('adalaj:entity_changed', handler);
+    return () => window.removeEventListener('adalaj:entity_changed', handler);
+  }, []);
+
+  const accounts = db.getAccountsByEntity(activeEntity);
   const items = db.getItems();
   const lots = db.getLots();
-  const parties = db.getParties();
+  const parties = db.getPartiesByEntity(activeEntity);
   const loans = db.getLoans();
   const assets = db.getAssets();
-  const transactions = db.getTransactions();
+  const transactions = db.getTransactionsByEntity(activeEntity);
   const batches = db.getBatches();
+  const entitiesConfig = db.getEntitiesConfig();
 
   // 1. Cash & Bank total
   const totalCashAndBankPaise = accounts.reduce((sum, a) => sum + a.balancePaise, 0);
@@ -103,7 +116,7 @@ export const DashboardWhereIsMyMoney: React.FC<DashboardProps> = ({
     totalCashAndBankPaise + totalStockValuePaise + totalReceivablesPaise - totalPayablesPaise - totalDebtBalancePaise;
 
   return (
-    <div key={refreshKey} className="space-y-4">
+    <div key={activeEntity} className="space-y-4">
       {/* Top Banner: Adalaj Themed Cockpit */}
       <div className="rounded-xl border p-4 sm:p-5 shadow-sm transition-colors bg-gradient-to-r from-[#8B1D24] via-[#9E1C23] to-[#7F1D1D] text-white border-[#B91C1C]/40">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -111,7 +124,13 @@ export const DashboardWhereIsMyMoney: React.FC<DashboardProps> = ({
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-200">
               <span>Financial Cockpit</span>
               <span>·</span>
-              <span className="opacity-90">Adalaj Operations Base</span>
+              <span className="opacity-90">
+                {activeEntity === 'pvt_ltd'
+                  ? 'Main Pvt. Ltd. (Strategic B2B & Modern Trade)'
+                  : activeEntity === 'sister_prop'
+                  ? 'Sister Proprietorship (Gujarat Distribution & CFA)'
+                  : 'Consolidated Enterprise Cockpit'}
+              </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-white mt-1">
               Where Is My Money Today?
@@ -173,6 +192,52 @@ export const DashboardWhereIsMyMoney: React.FC<DashboardProps> = ({
             </span>
           </div>
         </div>
+      </div>
+
+      {/* Operating Legal Entity Context Banner (Sections 1 & 7) */}
+      <div
+        className={`rounded-xl border p-3 flex items-center justify-between gap-3 text-xs ${
+          activeEntity === 'pvt_ltd'
+            ? 'bg-rose-500/10 border-rose-500/30 text-rose-800 dark:text-rose-300'
+            : activeEntity === 'sister_prop'
+            ? 'bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-300'
+            : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-800 dark:text-indigo-300'
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          {activeEntity === 'pvt_ltd' ? (
+            <Building2 className="w-4 h-4 flex-shrink-0 text-[#9A2229] dark:text-rose-400" />
+          ) : activeEntity === 'sister_prop' ? (
+            <Truck className="w-4 h-4 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+          ) : (
+            <Scale className="w-4 h-4 flex-shrink-0 text-indigo-600 dark:text-indigo-400" />
+          )}
+          <span>
+            {activeEntity === 'pvt_ltd' ? (
+              <>
+                Operating as <strong>{entitiesConfig.pvt_ltd.name}</strong> (CIN: {entitiesConfig.pvt_ltd.cinOrReg} · GSTIN: {entitiesConfig.pvt_ltd.gstin})
+              </>
+            ) : activeEntity === 'sister_prop' ? (
+              <>
+                Operating as <strong>{entitiesConfig.sister_prop.name}</strong> (Trade Reg: {entitiesConfig.sister_prop.cinOrReg} · GSTIN: {entitiesConfig.sister_prop.gstin})
+              </>
+            ) : (
+              <>
+                <strong>Dual-Entity Consolidated Financial Cockpit</strong> · Intra-Company Balances Reconciled
+              </>
+            )}
+          </span>
+        </div>
+        <button
+          onClick={() => onNavigate('interfirm_export')}
+          className="underline text-[11px] font-bold whitespace-nowrap cursor-pointer hover:opacity-80"
+        >
+          {activeEntity === 'pvt_ltd'
+            ? 'Reconcile Sister Firm ➔'
+            : activeEntity === 'sister_prop'
+            ? 'Secondary Sales & Depot ➔'
+            : 'Open Audit Ledger ➔'}
+        </button>
       </div>
 
       {/* Active Floor Alerts */}

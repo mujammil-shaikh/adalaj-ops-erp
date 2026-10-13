@@ -1,5 +1,17 @@
 import {
   BusinessEntity,
+  BusinessEntityId,
+  BusinessEntityConfig,
+  CustomerChannel,
+  InterEntityStockAllocation,
+  SisterDownstreamInvoice,
+  SisterDownstreamInvoiceItem,
+  InterEntitySettlement,
+  StockFlowReconciliation,
+  InterEntityLedgerReconciliation,
+  CHANNEL_DETAILS,
+  isMainCompanyChannel,
+  isSisterCompanyChannel,
   InventoryItem,
   StockLot,
   StockMovement,
@@ -30,6 +42,11 @@ import {
 
 const STORAGE_KEYS = {
   ENTITY: 'packing_ops_entity_v1',
+  ENTITIES_CONFIG: 'adalaj_entities_config_v1',
+  ACTIVE_ENTITY_ID: 'adalaj_active_entity_id_v1',
+  STOCK_ALLOCATIONS: 'adalaj_stock_allocations_v1',
+  SISTER_INVOICES: 'adalaj_sister_invoices_v1',
+  INTER_ENTITY_SETTLEMENTS: 'adalaj_inter_entity_settlements_v1',
   ITEMS: 'packing_ops_items_v1',
   LOTS: 'packing_ops_lots_v1',
   MOVEMENTS: 'packing_ops_movements_v1',
@@ -56,12 +73,51 @@ const STORAGE_KEYS = {
 // Initial Seed Data
 const initialEntity: BusinessEntity = {
   id: 'ent_adalaj_01',
-  name: 'Shree Krishna Packaging & Spice Hub',
+  name: 'Adalaj Food Products Pvt. Ltd.',
   location: 'Sarkhej-Gandhinagar Highway, Near Adalaj, Gujarat 382421',
   gstin: '24AAGCS9412F1Z4',
   pan: 'AAGCS9412F',
   financialYearStart: '04-01',
   currency: 'INR',
+};
+
+export const initialEntitiesConfig: Record<BusinessEntityId, BusinessEntityConfig> = {
+  pvt_ltd: {
+    id: 'pvt_ltd',
+    name: 'Adalaj Food Products Pvt. Ltd.',
+    shortName: 'Main Pvt. Ltd.',
+    legalType: 'Private Limited Company',
+    tradeName: 'ADALAJ — Made for Real Moments',
+    cinOrReg: 'U15400GJ2026PTC149812',
+    gstin: '24AAGCS9412F1Z4',
+    pan: 'AAGCS9412F',
+    address: 'Survey 412, Sarkhej-Gandhinagar Highway, Near Adalaj, Gandhinagar, Gujarat 382421',
+    stateCode: '24',
+    bankName: 'HDFC Bank Ltd, Gandhinagar Corporate Branch',
+    bankAccount: '50200012345678',
+    ifsc: 'HDFC0000241',
+    roleDescription: 'Primary Manufacturing Plant, Capex, Strategic Large B2B Accounts, Modern Trade, FMCG Chains, Industrial Ingredients, Exports',
+    colorCode: '#9A2229',
+  },
+  sister_prop: {
+    id: 'sister_prop',
+    name: 'Adalaj Distribution & Trading Co.',
+    shortName: 'Sister Proprietorship',
+    legalType: 'Sole Proprietorship',
+    tradeName: 'Adalaj Secondary Distribution & CFA Depot',
+    cinOrReg: 'GJ-01-2026-09182',
+    gstin: '24AAGCS9412F2Z1',
+    pan: 'AAPPS4819M',
+    address: 'Plot 14-B, Sardar Patel Ring Road Logistics Park, Aslali, Ahmedabad, Gujarat 382427',
+    stateCode: '24',
+    bankName: 'State Bank of India, Aslali Commercial Branch',
+    bankAccount: '38192048192',
+    ifsc: 'SBIN0004128',
+    roleDescription: 'CFA Depot Operations, Super-Stockists, Kirana Retailers, Quick-Commerce, D2C, Local Gujarat Distribution',
+    creditLimitWithParentPaise: 500000000, // ₹50 Lakhs agreed credit limit
+    defaultCreditPeriodDays: 45,          // 45 days default credit (up to 90 days)
+    colorCode: '#D97706',
+  },
 };
 
 const initialItems: InventoryItem[] = [
@@ -530,25 +586,28 @@ const initialBatches: PackingBatch[] = [
 ];
 
 const initialParties: Party[] = [
+  // Raw Material & Capex Suppliers (Main Pvt. Ltd.)
   {
     id: 'party_unjha_mandi',
-    name: 'Unjha Mandi Spice Traders',
+    name: 'Unjha Mandi Spice Traders (Bulk Spices)',
     type: 'supplier',
     phone: '+91 98250 11234',
     gstin: '24AACFU8821B1Z2',
     city: 'Unjha, Mehsana',
     creditDays: 30,
     outstandingPaise: 14500000, // ₹1,45,000 we owe them
+    assignedEntityId: 'pvt_ltd',
   },
   {
     id: 'party_polyfilms',
-    name: 'Gujarat Polyfilms Packaging Ltd',
+    name: 'Gujarat Polyfilms Packaging Ltd (Film Rolls)',
     type: 'supplier',
     phone: '+91 97240 55678',
     gstin: '24AAACG3312Q1Z9',
     city: 'Changodar, Ahmedabad',
     creditDays: 21,
     outstandingPaise: 6800000, // ₹68,000 we owe
+    assignedEntityId: 'pvt_ltd',
   },
   {
     id: 'party_mahavir_packer',
@@ -558,7 +617,8 @@ const initialParties: Party[] = [
     gstin: '24AAGFM5519J1ZY',
     city: 'Sanand GIDC, Ahmedabad',
     creditDays: 15,
-    outstandingPaise: 2450000, // ₹24,500 payable for job work
+    outstandingPaise: 2450000, // ₹24,500 payable
+    assignedEntityId: 'pvt_ltd',
   },
   {
     id: 'party_patel_mach',
@@ -569,6 +629,127 @@ const initialParties: Party[] = [
     city: 'Ahmedabad',
     creditDays: 7,
     outstandingPaise: 0,
+    assignedEntityId: 'pvt_ltd',
+  },
+
+  // Main Pvt. Ltd. Exclusive B2B Strategic Customers (Section 2)
+  {
+    id: 'party_dmart',
+    name: 'Avenue Supermarts Ltd (DMart Regional DC)',
+    type: 'customer',
+    phone: '+91 98251 77889',
+    gstin: '24AABCA5512L1Z9',
+    city: 'Ahmedabad & Vadodara',
+    creditDays: 45,
+    outstandingPaise: -185000000, // ₹18,50,000 receivable
+    channel: 'modern_trade',
+    assignedEntityId: 'pvt_ltd',
+    creditLimitPaise: 300000000,
+  },
+  {
+    id: 'party_haldiram',
+    name: 'Haldiram Snacks Pvt Ltd (Manufacturing Ingredients)',
+    type: 'customer',
+    phone: '+91 97120 44882',
+    gstin: '24AAACH9918M1ZF',
+    city: 'Sanand GIDC, Gujarat',
+    creditDays: 30,
+    outstandingPaise: -320000000, // ₹32,00,000 receivable
+    channel: 'industrial_mfg',
+    assignedEntityId: 'pvt_ltd',
+    creditLimitPaise: 500000000,
+  },
+  {
+    id: 'party_taj',
+    name: 'Taj Gateway Hotels & Resorts (Gujarat Hospitality)',
+    type: 'customer',
+    phone: '+91 98240 66771',
+    gstin: '24AAACT8129N1Z3',
+    city: 'Gandhinagar & Surat',
+    creditDays: 30,
+    outstandingPaise: -8400000, // ₹84,000 receivable
+    channel: 'horeca_large',
+    assignedEntityId: 'pvt_ltd',
+    creditLimitPaise: 25000000,
+  },
+  {
+    id: 'party_almadina',
+    name: 'Al-Madina Spice Trading LLC, Dubai (Export)',
+    type: 'customer',
+    phone: '+971 4 228 9912',
+    city: 'Dubai, UAE',
+    creditDays: 30,
+    outstandingPaise: -237975000, // ₹23,79,750 receivable
+    channel: 'export',
+    assignedEntityId: 'pvt_ltd',
+    creditLimitPaise: 500000000,
+  },
+  {
+    id: 'party_irctc',
+    name: 'Western Railway Catering & IRCTC Base Kitchen',
+    type: 'customer',
+    phone: '+91 97240 99112',
+    gstin: '24AAACI1829L1Z5',
+    city: 'Ahmedabad Junction',
+    creditDays: 30,
+    outstandingPaise: -6500000, // ₹65,000 receivable
+    channel: 'institutional_large',
+    assignedEntityId: 'pvt_ltd',
+    creditLimitPaise: 20000000,
+  },
+
+  // Sister Proprietorship Routine Gujarat Distribution Customers (Section 3)
+  {
+    id: 'pty_zepto_sanand',
+    name: 'Zepto Dark Store Hub (Sanand Logistics Park)',
+    type: 'customer',
+    phone: '+91 98980 11223',
+    gstin: '24AAACZ8912P1Z0',
+    city: 'Sanand, Ahmedabad',
+    creditDays: 15,
+    outstandingPaise: 0,
+    channel: 'quick_commerce',
+    assignedEntityId: 'sister_prop',
+    creditLimitPaise: 20000000,
+  },
+  {
+    id: 'pty_ret_bhavnagar',
+    name: 'Bhavnagar Kirana & Provision Stores',
+    type: 'customer',
+    phone: '+91 94280 44556',
+    gstin: '24AAUPB4412K1Z8',
+    city: 'Bhavnagar',
+    creditDays: 14,
+    outstandingPaise: -1000000, // ₹10,000 receivable
+    channel: 'small_retailer',
+    assignedEntityId: 'sister_prop',
+    creditLimitPaise: 5000000,
+  },
+  {
+    id: 'pty_ss_surat',
+    name: 'Surat Spice Super-Stockist Syndicate',
+    type: 'customer',
+    phone: '+91 98251 33445',
+    gstin: '24AABCS7712M1Z1',
+    city: 'Surat (Ring Road Market)',
+    creditDays: 21,
+    outstandingPaise: -9500000, // ₹95,000 receivable
+    channel: 'super_stockist',
+    assignedEntityId: 'sister_prop',
+    creditLimitPaise: 25000000,
+  },
+  {
+    id: 'pty_honest_resto',
+    name: 'Honest Restaurant & Fast Food (Highway Branch)',
+    type: 'customer',
+    phone: '+91 98250 88992',
+    gstin: '24AABCH1920Q1Z7',
+    city: 'Gandhinagar Highway',
+    creditDays: 7,
+    outstandingPaise: -1420000, // ₹14,200 receivable
+    channel: 'horeca_small',
+    assignedEntityId: 'sister_prop',
+    creditLimitPaise: 5000000,
   },
   {
     id: 'party_dist_shivam',
@@ -578,36 +759,68 @@ const initialParties: Party[] = [
     gstin: '24ABGFS1190L1ZO',
     city: 'Kalol & Gandhinagar',
     creditDays: 15,
-    outstandingPaise: -38500000, // -₹3,85,000 they owe us (receivable)
+    outstandingPaise: -38500000, // ₹3,85,000 receivable
+    channel: 'cfa_distributor',
+    assignedEntityId: 'sister_prop',
+    creditLimitPaise: 50000000,
   },
 ];
 
 const initialAccounts: Account[] = [
+  // Main Pvt. Ltd. Accounts
   {
     id: 'acc_cash_safe',
-    name: 'Factory Cash in Safe',
+    name: 'Plant Cash in Safe (Adalaj Factory)',
     type: 'cash',
     balancePaise: 4520000, // ₹45,200
+    entityId: 'pvt_ltd',
   },
   {
     id: 'acc_hdfc_curr',
-    name: 'HDFC Current A/c (Adalaj Branch - 50200088)',
+    name: 'HDFC Current A/c - 50200012345678 (Main Company)',
     type: 'bank',
-    accountNoMasked: 'HDFC •••• 8824',
+    accountNoMasked: 'HDFC •••• 5678',
     balancePaise: 84215000, // ₹8,42,150
+    entityId: 'pvt_ltd',
   },
   {
     id: 'acc_sbi_mach',
-    name: 'SBI Machinery & Packing CC A/c (3918002)',
+    name: 'SBI Machinery & Term CC A/c (3918002)',
     type: 'bank',
     accountNoMasked: 'SBI •••• 8002',
     balancePaise: 31560000, // ₹3,15,600
+    entityId: 'pvt_ltd',
   },
   {
     id: 'acc_petty',
-    name: 'Petty Cash Floor Register (Supervisor)',
+    name: 'Factory Petty Cash Floor Register (Plant Supervisor)',
     type: 'petty_cash',
     balancePaise: 1280000, // ₹12,800
+    entityId: 'pvt_ltd',
+  },
+
+  // Sister Proprietorship Accounts (Independent Cash & Bank Management - Section 6)
+  {
+    id: 'acc_sbi_sister',
+    name: 'SBI Commercial Current A/c - 38192048192 (Sister Firm)',
+    type: 'bank',
+    accountNoMasked: 'SBI •••• 8192',
+    balancePaise: 18450000, // ₹1,84,500
+    entityId: 'sister_prop',
+  },
+  {
+    id: 'acc_cash_depot',
+    name: 'CFA Depot Cash in Hand (Aslali Counter & Driver Collections)',
+    type: 'cash',
+    balancePaise: 1250000, // ₹12,500
+    entityId: 'sister_prop',
+  },
+  {
+    id: 'acc_upi_sister',
+    name: 'Sister Firm Business UPI & QR Settlement Register',
+    type: 'upi',
+    balancePaise: 4800000, // ₹48,000
+    entityId: 'sister_prop',
   },
 ];
 
@@ -1850,6 +2063,194 @@ const initialExportShipments: ExportShipment[] = [
   },
 ];
 
+const initialStockAllocations: InterEntityStockAllocation[] = [
+  {
+    id: 'alc_2026_10_c1',
+    allocationNumber: 'ALC-2026-10-C1',
+    cycle: 'biweekly',
+    periodStart: '2026-10-01',
+    periodEnd: '2026-10-15',
+    creditDueDate: '2026-11-15',
+    sourceEntityId: 'pvt_ltd',
+    destinationEntityId: 'sister_prop',
+    totalAllocatedGrams: 1020000, // 1,020 kg
+    totalValuationPaise: 38300000, // ₹3,83,000 valuation
+    challanIds: ['DC-2026-10-001', 'DC-2026-10-002'],
+    status: 'active',
+    settledAmountPaise: 15000000, // ₹1,50,000 paid as advance
+    balanceOutstandingPaise: 23300000, // ₹2,33,000 pending
+    notes: 'Biweekly stock allocation cycle for Gujarat distribution network. Credit terms: 45 days.',
+  },
+];
+
+const initialSisterDownstreamInvoices: SisterDownstreamInvoice[] = [
+  {
+    id: 'inv_sis_001',
+    invoiceNo: 'ADL-DIS-2026-1001',
+    date: '2026-10-11',
+    channel: 'quick_commerce',
+    customerId: 'pty_zepto_sanand',
+    customerName: 'Zepto Dark Store Hub (Sanand Logistics Park)',
+    customerGstin: '24AAACZ8912P1Z0',
+    customerCity: 'Sanand, Ahmedabad',
+    customerPhone: '+91 98980 11223',
+    paymentDueDate: '2026-10-26',
+    paymentStatus: 'paid',
+    items: [
+      {
+        itemId: 'item_haldi_100g',
+        sku: 'FG-HLD-100G',
+        name: 'Turmeric Powder (Haldi) 100g Consumer Pouch',
+        packSizeGrams: 100,
+        batchNo: 'BAT-2026-10-01',
+        qtyPacks: 1200,
+        totalGrams: 120000,
+        ratePerPackPaise: 4000, // ₹40/pack
+        taxableAmountPaise: 4571400,
+        gstRatePct: 5,
+        cgstPaise: 114300,
+        sgstPaise: 114300,
+        totalPaise: 4800000, // ₹48,000
+      },
+    ],
+    totalGrams: 120000,
+    taxableAmountPaise: 4571400,
+    cgstPaise: 114300,
+    sgstPaise: 114300,
+    totalPaise: 4800000,
+    paidAmountPaise: 4800000,
+    balanceDuePaise: 0,
+    payments: [
+      {
+        id: 'pay_dis_001',
+        date: '2026-10-12',
+        amountPaise: 4800000,
+        mode: 'UPI / Escrow Settlement',
+        reference: 'ZPT-PAY-9812901',
+      },
+    ],
+    notes: 'Secondary delivery to dark store bay #4.',
+  },
+  {
+    id: 'inv_sis_002',
+    invoiceNo: 'ADL-DIS-2026-1002',
+    date: '2026-10-11',
+    channel: 'small_retailer',
+    customerId: 'pty_ret_bhavnagar',
+    customerName: 'Bhavnagar Kirana & Provision Stores',
+    customerGstin: '24AAUPB4412K1Z8',
+    customerCity: 'Bhavnagar',
+    customerPhone: '+91 94280 44556',
+    paymentDueDate: '2026-10-25',
+    paymentStatus: 'part_paid',
+    items: [
+      {
+        itemId: 'item_mirchi_250g',
+        sku: 'FG-MRC-250G',
+        name: 'Red Chilli Powder (Mirchi) 250g Consumer Pouch',
+        packSizeGrams: 250,
+        batchNo: 'BAT-2026-10-02',
+        qtyPacks: 160,
+        totalGrams: 40000,
+        ratePerPackPaise: 11562, // ₹115.62
+        taxableAmountPaise: 1761900,
+        gstRatePct: 5,
+        cgstPaise: 44050,
+        sgstPaise: 44050,
+        totalPaise: 1850000, // ₹18,500
+      },
+    ],
+    totalGrams: 40000,
+    taxableAmountPaise: 1761900,
+    cgstPaise: 44050,
+    sgstPaise: 44050,
+    totalPaise: 1850000,
+    paidAmountPaise: 850000, // ₹8,500 paid
+    balanceDuePaise: 1000000, // ₹10,000 balance
+    payments: [
+      {
+        id: 'pay_dis_002',
+        date: '2026-10-11',
+        amountPaise: 850000,
+        mode: 'Cash to Route Van Driver',
+        reference: 'RV-CASH-REC-104',
+      },
+    ],
+    notes: 'Route delivery via Driver Hitesh Shah.',
+  },
+  {
+    id: 'inv_sis_003',
+    invoiceNo: 'ADL-DIS-2026-1003',
+    date: '2026-10-12',
+    channel: 'super_stockist',
+    customerId: 'pty_ss_surat',
+    customerName: 'Surat Spice Super-Stockist Syndicate',
+    customerGstin: '24AABCS7712M1Z1',
+    customerCity: 'Surat (Ring Road Market)',
+    customerPhone: '+91 98251 33445',
+    paymentDueDate: '2026-11-02',
+    paymentStatus: 'unpaid',
+    items: [
+      {
+        itemId: 'item_haldi_100g',
+        sku: 'FG-HLD-100G',
+        name: 'Turmeric Powder (Haldi) 100g Consumer Pouch',
+        packSizeGrams: 100,
+        batchNo: 'BAT-2026-10-01',
+        qtyPacks: 2000,
+        totalGrams: 200000,
+        ratePerPackPaise: 3800,
+        taxableAmountPaise: 7238100,
+        gstRatePct: 5,
+        cgstPaise: 180950,
+        sgstPaise: 180950,
+        totalPaise: 7600000, // ₹76,000
+      },
+      {
+        itemId: 'item_mirchi_250g',
+        sku: 'FG-MRC-250G',
+        name: 'Red Chilli Powder (Mirchi) 250g Consumer Pouch',
+        packSizeGrams: 250,
+        batchNo: 'BAT-2026-10-02',
+        qtyPacks: 160,
+        totalGrams: 40000,
+        ratePerPackPaise: 11875,
+        taxableAmountPaise: 1809500,
+        gstRatePct: 5,
+        cgstPaise: 45250,
+        sgstPaise: 45250,
+        totalPaise: 1900000, // ₹19,000
+      },
+    ],
+    totalGrams: 240000,
+    taxableAmountPaise: 9047600,
+    cgstPaise: 226200,
+    sgstPaise: 226200,
+    totalPaise: 9500000, // ₹95,000
+    paidAmountPaise: 0,
+    balanceDuePaise: 9500000,
+    notes: 'Credit terms: 21 days dispatch to Surat South hub.',
+  },
+];
+
+const initialInterEntitySettlements: InterEntitySettlement[] = [
+  {
+    id: 'ies_2026_10_001',
+    settlementNo: 'IES-2026-10-001',
+    date: '2026-10-10',
+    amountPaise: 15000000, // ₹1,50,000
+    remittedFromAccountId: 'acc_sbi_sister',
+    depositedToAccountId: 'acc_hdfc_curr',
+    paymentMode: 'NEFT',
+    bankUtrRef: 'SBIN1010992812',
+    settlementType: 'stock_advance',
+    linkedAllocationIds: ['alc_2026_10_c1'],
+    linkedChallanIds: ['DC-2026-10-001'],
+    notes: 'Advance remittance against Delivery Challan DC-2026-10-001 per agreed credit arrangement.',
+    verifiedByAuditor: true,
+  },
+];
+
 // In-Memory & LocalStorage wrapper
 class StorageEngine {
   private get<T>(key: string, fallback: T): T {
@@ -2693,9 +3094,407 @@ class StorageEngine {
     this.logOutbox('update', 'movement', `Updated Export Shipment ${shipment.exportInvoiceNo}`);
   }
 
+  // Business Entities Multi-Company Configuration (Section 1)
+  getEntitiesConfig(): Record<BusinessEntityId, BusinessEntityConfig> {
+    return this.get<Record<BusinessEntityId, BusinessEntityConfig>>(
+      STORAGE_KEYS.ENTITIES_CONFIG,
+      initialEntitiesConfig
+    );
+  }
+
+  saveEntitiesConfig(cfg: Record<BusinessEntityId, BusinessEntityConfig>): void {
+    this.set(STORAGE_KEYS.ENTITIES_CONFIG, cfg);
+  }
+
+  getActiveEntityId(): BusinessEntityId | 'all' {
+    return this.get<BusinessEntityId | 'all'>(STORAGE_KEYS.ACTIVE_ENTITY_ID, 'all');
+  }
+
+  setActiveEntityId(id: BusinessEntityId | 'all'): void {
+    this.set(STORAGE_KEYS.ACTIVE_ENTITY_ID, id);
+  }
+
+  // Stock Allocations (Section 4)
+  getStockAllocations(): InterEntityStockAllocation[] {
+    return this.get<InterEntityStockAllocation[]>(
+      STORAGE_KEYS.STOCK_ALLOCATIONS,
+      initialStockAllocations
+    );
+  }
+
+  saveStockAllocations(allocations: InterEntityStockAllocation[]): void {
+    this.set(STORAGE_KEYS.STOCK_ALLOCATIONS, allocations);
+  }
+
+  addStockAllocation(allocation: InterEntityStockAllocation): void {
+    const list = this.getStockAllocations();
+    this.saveStockAllocations([allocation, ...list]);
+    this.logOutbox('create', 'movement', `Created Stock Allocation ${allocation.allocationNumber}`);
+  }
+
+  updateStockAllocation(allocation: InterEntityStockAllocation): void {
+    const list = this.getStockAllocations().map((a) => (a.id === allocation.id ? allocation : a));
+    this.saveStockAllocations(list);
+    this.logOutbox('update', 'movement', `Updated Stock Allocation ${allocation.allocationNumber}`);
+  }
+
+  // Sister Downstream Invoices (Section 3)
+  getSisterDownstreamInvoices(): SisterDownstreamInvoice[] {
+    return this.get<SisterDownstreamInvoice[]>(
+      STORAGE_KEYS.SISTER_INVOICES,
+      initialSisterDownstreamInvoices
+    );
+  }
+
+  saveSisterDownstreamInvoices(invoices: SisterDownstreamInvoice[]): void {
+    this.set(STORAGE_KEYS.SISTER_INVOICES, invoices);
+  }
+
+  addSisterDownstreamInvoice(invoice: SisterDownstreamInvoice): void {
+    const list = this.getSisterDownstreamInvoices();
+    this.saveSisterDownstreamInvoices([invoice, ...list]);
+
+    // Posting Service Invariant: Post secondary stock decrement
+    const movements = this.getMovements();
+    const newMovements: StockMovement[] = [];
+
+    invoice.items.forEach((item, index) => {
+      const mov: StockMovement = {
+        id: `mov_sec_${Date.now()}_${index}`,
+        date: invoice.date,
+        time: new Date().toTimeString().slice(0, 5),
+        itemId: item.itemId,
+        itemName: item.name,
+        locationId: 'loc_cfa_aslali',
+        locationName: 'Sister CFA Depot (Aslali)',
+        qtyBase: -item.totalGrams, // negative = secondary sales out
+        type: 'issue',
+        reference: invoice.invoiceNo,
+        unitCostPaise: Math.round(item.taxableAmountPaise / (item.totalGrams || 1)),
+        notes: `Secondary sales dispatch to ${invoice.customerName} (${invoice.channel})`,
+      };
+      newMovements.push(mov);
+    });
+
+    this.saveMovements([...newMovements, ...movements]);
+
+    // If payment was made immediately at invoice time
+    if (invoice.paidAmountPaise > 0) {
+      const txn: Transaction = {
+        id: `txn_sec_col_${Date.now()}`,
+        txnNo: `TXN-INV-${invoice.invoiceNo}`,
+        date: invoice.date,
+        direction: 'in',
+        accountId: 'acc_cash_depot',
+        accountName: 'CFA Depot Cash in Hand',
+        partyId: invoice.customerId,
+        partyName: invoice.customerName,
+        amountPaise: invoice.paidAmountPaise,
+        headCategory: 'Secondary Sales Revenue (Gujarat)',
+        mode: 'Cash',
+        reference: invoice.invoiceNo,
+        status: 'posted',
+        entityId: 'sister_prop',
+        notes: `Customer collection against invoice ${invoice.invoiceNo}`,
+      };
+      this.addTransaction(txn);
+    }
+
+    this.logOutbox('create', 'bill', `Issued Secondary Invoice ${invoice.invoiceNo} to ${invoice.customerName}`);
+  }
+
+  recordSisterInvoicePayment(
+    invoiceId: string,
+    amountPaise: number,
+    mode: string,
+    ref: string
+  ): void {
+    const invoices = this.getSisterDownstreamInvoices().map((inv) => {
+      if (inv.id === invoiceId) {
+        const newPaid = inv.paidAmountPaise + amountPaise;
+        const newBalance = Math.max(0, inv.totalPaise - newPaid);
+        const payments = inv.payments || [];
+        const newPayment = {
+          id: `pay_${Date.now()}`,
+          date: new Date().toISOString().split('T')[0],
+          amountPaise,
+          mode,
+          reference: ref,
+        };
+
+        return {
+          ...inv,
+          paidAmountPaise: newPaid,
+          balanceDuePaise: newBalance,
+          paymentStatus: (newBalance === 0 ? 'paid' : 'part_paid') as 'paid' | 'part_paid',
+          payments: [...payments, newPayment],
+        };
+      }
+      return inv;
+    });
+
+    this.saveSisterDownstreamInvoices(invoices);
+
+    // Posting Service Invariant: Debit Sister bank/cash
+    const txn: Transaction = {
+      id: `txn_col_${Date.now()}`,
+      txnNo: ref ? `TXN-${ref}` : `TXN-COL-${Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      direction: 'in',
+      accountId: mode.toLowerCase().includes('bank') ? 'acc_sbi_sister' : 'acc_cash_depot',
+      accountName: mode.toLowerCase().includes('bank') ? 'SBI Commercial Current A/c' : 'CFA Depot Cash in Hand',
+      amountPaise,
+      headCategory: 'Secondary Sales Collection',
+      mode: mode.toLowerCase().includes('bank') ? 'SBI Transfer' : 'Cash',
+      reference: ref,
+      status: 'posted',
+      entityId: 'sister_prop',
+      notes: `Payment collected against invoice ${invoiceId}`,
+    };
+    this.addTransaction(txn);
+    this.logOutbox('create', 'transaction', `Recorded customer payment ₹${amountPaise / 100} on invoice ${invoiceId}`);
+  }
+
+  // Inter-Entity Settlements (Sections 4 & 5)
+  getInterEntitySettlements(): InterEntitySettlement[] {
+    return this.get<InterEntitySettlement[]>(
+      STORAGE_KEYS.INTER_ENTITY_SETTLEMENTS,
+      initialInterEntitySettlements
+    );
+  }
+
+  saveInterEntitySettlements(settlements: InterEntitySettlement[]): void {
+    this.set(STORAGE_KEYS.INTER_ENTITY_SETTLEMENTS, settlements);
+  }
+
+  addInterEntitySettlement(settlement: InterEntitySettlement): void {
+    const list = this.getInterEntitySettlements();
+    this.saveInterEntitySettlements([settlement, ...list]);
+
+    // Posting Service Invariant: Post dual-entry transactions in both entity ledgers
+    // 1. In Sister Books: Bank Outflow
+    const sisterTxn: Transaction = {
+      id: `txn_ies_out_${Date.now()}`,
+      txnNo: `TXN-IES-OUT-${settlement.bankUtrRef}`,
+      date: settlement.date,
+      direction: 'out',
+      accountId: settlement.remittedFromAccountId,
+      accountName: 'SBI Commercial Current A/c (Sister Firm)',
+      amountPaise: settlement.amountPaise,
+      headCategory: 'Inter-Firm Settlement Remittance',
+      mode: 'SBI Transfer',
+      reference: `UTR: ${settlement.bankUtrRef}`,
+      status: 'posted',
+      entityId: 'sister_prop',
+      notes: `Remittance to Main Pvt. Ltd. (Ref: ${settlement.settlementNo})`,
+    };
+    this.addTransaction(sisterTxn);
+
+    // 2. In Main Books: Bank Inflow
+    const mainTxn: Transaction = {
+      id: `txn_ies_in_${Date.now()}`,
+      txnNo: `TXN-IES-IN-${settlement.bankUtrRef}`,
+      date: settlement.date,
+      direction: 'in',
+      accountId: settlement.depositedToAccountId,
+      accountName: 'HDFC Current A/c (Main Company)',
+      amountPaise: settlement.amountPaise,
+      headCategory: 'Inter-Firm Settlement Receipt',
+      mode: 'HDFC NetBanking',
+      reference: `UTR: ${settlement.bankUtrRef}`,
+      status: 'posted',
+      entityId: 'pvt_ltd',
+      notes: `Received from Sister Proprietorship (Ref: ${settlement.settlementNo})`,
+    };
+    this.addTransaction(mainTxn);
+
+    // 3. Update Allocation Settled Balances
+    const allocations = this.getStockAllocations().map((alc) => {
+      if (settlement.linkedAllocationIds?.includes(alc.id)) {
+        const settled = alc.settledAmountPaise + settlement.amountPaise;
+        const balance = Math.max(0, alc.totalValuationPaise - settled);
+        return {
+          ...alc,
+          settledAmountPaise: settled,
+          balanceOutstandingPaise: balance,
+          status: (balance === 0 ? 'fully_settled' : 'partially_settled') as 'fully_settled' | 'partially_settled',
+        };
+      }
+      return alc;
+    });
+    this.saveStockAllocations(allocations);
+
+    this.logOutbox('create', 'transaction', `Executed Inter-Entity Settlement ${settlement.settlementNo} of ₹${settlement.amountPaise / 100}`);
+  }
+
+  // Reconciliation Engine (Section 5)
+  getInterEntityReconciliationReport(): InterEntityLedgerReconciliation {
+    const allocations = this.getStockAllocations();
+    const challans = this.getInterFirmTransfers();
+    const settlements = this.getInterEntitySettlements();
+    const entityConfig = this.getEntitiesConfig();
+
+    // 1. Total Dispatched / Supplied from Main Pvt. Ltd. to Sister Firm
+    const totalDispatchedValuationPaise = challans.reduce((sum, c) => sum + c.totalValuationPaise, 0);
+
+    // 2. Total Acknowledged Received at Sister CFA Depot
+    const totalReceivedValuationPaise = challans
+      .filter((c) => c.status === 'received_at_cfa')
+      .reduce((sum, c) => sum + c.totalValuationPaise, 0);
+
+    // 3. In-Transit Dispatches (Dispatched by Main, but not yet received by Sister)
+    const inTransitDispatchesPaise = challans
+      .filter((c) => c.status === 'in_transit' || c.status === 'dispatched')
+      .reduce((sum, c) => sum + c.totalValuationPaise, 0);
+
+    // 4. Total Settlements Remitted by Sister to Main
+    const totalSettledPaise = settlements.reduce((sum, s) => sum + s.amountPaise, 0);
+
+    // 5. Uncredited Settlements (in-transit remittances)
+    const uncreditedSettlementsPaise = settlements
+      .filter((s) => !s.verifiedByAuditor)
+      .reduce((sum, s) => sum + s.amountPaise, 0);
+
+    // In Main Books: Main Receivable = Total Dispatched - Total Settled
+    const mainReceivableFromSisterPaise = Math.max(0, totalDispatchedValuationPaise - totalSettledPaise);
+
+    // In Sister Books: Sister Payable = Total Received - Total Settled
+    const sisterPayableToMainPaise = Math.max(0, totalReceivedValuationPaise - totalSettledPaise);
+
+    // Net Discrepancy = Difference between Main Receivable and (Sister Payable + In-Transit Dispatches)
+    const netDiscrepancyPaise = Math.abs(
+      mainReceivableFromSisterPaise - (sisterPayableToMainPaise + inTransitDispatchesPaise)
+    );
+
+    const creditLimitPaise = entityConfig.sister_prop?.creditLimitWithParentPaise || 500000000;
+    const creditUtilizationPct = Math.round((mainReceivableFromSisterPaise / creditLimitPaise) * 100);
+
+    const alerts: InterEntityLedgerReconciliation['alerts'] = [];
+
+    // Alert: In-transit Challans
+    const inTransitChallans = challans.filter((c) => c.status === 'in_transit');
+    if (inTransitChallans.length > 0) {
+      alerts.push({
+        type: 'warning',
+        code: 'IN_TRANSIT_STOCK',
+        message: `${inTransitChallans.length} delivery challan(s) totaling ₹${inTransitDispatchesPaise / 100} currently in transit to Aslali CFA Depot.`,
+        referenceId: inTransitChallans.map((c) => c.transferChallanNo).join(', '),
+      });
+    }
+
+    // Alert: Credit Limit Threshold
+    if (creditUtilizationPct > 80) {
+      alerts.push({
+        type: 'warning',
+        code: 'CREDIT_LIMIT_HIGH',
+        message: `Sister firm credit exposure is at ${creditUtilizationPct}% of approved ₹${creditLimitPaise / 100} limit. Outstanding: ₹${mainReceivableFromSisterPaise / 100}.`,
+      });
+    }
+
+    // Alert: Aging / Overdue Allocations
+    const today = new Date().toISOString().split('T')[0];
+    allocations.forEach((alc) => {
+      if (alc.balanceOutstandingPaise > 0 && alc.creditDueDate < today) {
+        alerts.push({
+          type: 'error',
+          code: 'ALLOCATION_OVERDUE',
+          message: `Allocation ${alc.allocationNumber} is past credit due date (${alc.creditDueDate}). Balance due: ₹${alc.balanceOutstandingPaise / 100}.`,
+          referenceId: alc.allocationNumber,
+        });
+      }
+    });
+
+    if (netDiscrepancyPaise === 0) {
+      alerts.push({
+        type: 'info',
+        code: 'LEDGER_BALANCED',
+        message: `Books in perfect parity. Main debits match Sister credits accounting for in-transit logistics.`,
+      });
+    }
+
+    return {
+      periodLabel: 'October 2026 Fiscal Cycle',
+      mainReceivableFromSisterPaise,
+      sisterPayableToMainPaise,
+      netDiscrepancyPaise,
+      inTransitDispatchesPaise,
+      uncreditedSettlementsPaise,
+      creditLimitPaise,
+      creditUtilizationPct,
+      status: netDiscrepancyPaise === 0 ? 'matched' : 'unmatched_discrepancy',
+      alerts,
+    };
+  }
+
+  getStockFlowReconciliation(): StockFlowReconciliation {
+    const challans = this.getInterFirmTransfers();
+    const sisterInvoices = this.getSisterDownstreamInvoices();
+
+    const suppliedByMainGrams = challans.reduce((sum, c) => sum + c.totalGrams, 0);
+    const receivedAtSisterGrams = challans
+      .filter((c) => c.status === 'received_at_cfa')
+      .reduce((sum, c) => sum + c.totalGrams, 0);
+    const inTransitGrams = challans
+      .filter((c) => c.status === 'in_transit' || c.status === 'dispatched')
+      .reduce((sum, c) => sum + c.totalGrams, 0);
+
+    const soldDownstreamGrams = sisterInvoices.reduce((sum, inv) => sum + inv.totalGrams, 0);
+    const openingDepotStockGrams = 80000; // 80 kg buffer
+    const damagedOrReturnedGrams = 2000;  // 2 kg seals verification
+    const closingDepotStockGrams = Math.max(
+      0,
+      openingDepotStockGrams + receivedAtSisterGrams - soldDownstreamGrams - damagedOrReturnedGrams
+    );
+
+    const calculatedRemaining = openingDepotStockGrams + receivedAtSisterGrams - (soldDownstreamGrams + damagedOrReturnedGrams);
+    const discrepancyGrams = Math.abs(calculatedRemaining - closingDepotStockGrams);
+
+    return {
+      periodLabel: 'October 2026',
+      openingDepotStockGrams,
+      suppliedByMainGrams,
+      receivedAtSisterGrams,
+      inTransitGrams,
+      soldDownstreamGrams,
+      closingDepotStockGrams,
+      damagedOrReturnedGrams,
+      discrepancyGrams,
+      status: discrepancyGrams === 0 ? 'balanced' : 'variance_detected',
+    };
+  }
+
+  // Filtered queries by Entity ID
+  getPartiesByEntity(entityId?: BusinessEntityId | 'all'): Party[] {
+    const list = this.getParties();
+    if (!entityId || entityId === 'all') return list;
+    return list.filter((p) => p.assignedEntityId === entityId || !p.assignedEntityId);
+  }
+
+  getAccountsByEntity(entityId?: BusinessEntityId | 'all'): Account[] {
+    const list = this.getAccounts();
+    if (!entityId || entityId === 'all') return list;
+    return list.filter((a) => a.entityId === entityId || !a.entityId);
+  }
+
+  getTransactionsByEntity(entityId?: BusinessEntityId | 'all'): Transaction[] {
+    const list = this.getTransactions();
+    if (!entityId || entityId === 'all') return list;
+    return list.filter((t) => t.entityId === entityId || !t.entityId);
+  }
+
+  getBillsByEntity(entityId?: BusinessEntityId | 'all'): Bill[] {
+    const list = this.getBills();
+    if (!entityId || entityId === 'all') return list;
+    return list.filter((b) => b.entityId === entityId || !b.entityId);
+  }
+
   // Reset to initial starter template
   resetStarterTemplate(): void {
     this.set(STORAGE_KEYS.ENTITY, initialEntity);
+    this.set(STORAGE_KEYS.ENTITIES_CONFIG, initialEntitiesConfig);
+    this.set(STORAGE_KEYS.STOCK_ALLOCATIONS, initialStockAllocations);
+    this.set(STORAGE_KEYS.SISTER_INVOICES, initialSisterDownstreamInvoices);
+    this.set(STORAGE_KEYS.INTER_ENTITY_SETTLEMENTS, initialInterEntitySettlements);
     this.set(STORAGE_KEYS.ITEMS, initialItems);
     this.set(STORAGE_KEYS.LOTS, initialLots);
     this.set(STORAGE_KEYS.MOVEMENTS, initialMovements);
@@ -2722,6 +3521,10 @@ class StorageEngine {
     return JSON.stringify(
       {
         entity: this.getEntity(),
+        entitiesConfig: this.getEntitiesConfig(),
+        stockAllocations: this.getStockAllocations(),
+        sisterInvoices: this.getSisterDownstreamInvoices(),
+        interEntitySettlements: this.getInterEntitySettlements(),
         items: this.getItems(),
         lots: this.getLots(),
         movements: this.getMovements(),
@@ -2741,7 +3544,7 @@ class StorageEngine {
         interFirmTransfers: this.getInterFirmTransfers(),
         exportShipments: this.getExportShipments(),
         exportedAt: new Date().toISOString(),
-        version: '1.2.0',
+        version: '1.3.0',
       },
       null,
       2
@@ -2754,6 +3557,10 @@ class StorageEngine {
       const data = JSON.parse(jsonStr);
       if (data.items && data.batches && data.accounts) {
         if (data.entity) this.set(STORAGE_KEYS.ENTITY, data.entity);
+        if (data.entitiesConfig) this.set(STORAGE_KEYS.ENTITIES_CONFIG, data.entitiesConfig);
+        if (data.stockAllocations) this.set(STORAGE_KEYS.STOCK_ALLOCATIONS, data.stockAllocations);
+        if (data.sisterInvoices) this.set(STORAGE_KEYS.SISTER_INVOICES, data.sisterInvoices);
+        if (data.interEntitySettlements) this.set(STORAGE_KEYS.INTER_ENTITY_SETTLEMENTS, data.interEntitySettlements);
         if (data.items) this.set(STORAGE_KEYS.ITEMS, data.items);
         if (data.lots) this.set(STORAGE_KEYS.LOTS, data.lots);
         if (data.movements) this.set(STORAGE_KEYS.MOVEMENTS, data.movements);

@@ -1,5 +1,27 @@
 export type UserRole = 'owner' | 'accountant' | 'store_keeper' | 'supervisor' | 'salesman' | 'ca_auditor';
 
+export type BusinessEntityId = 'pvt_ltd' | 'sister_prop';
+
+export interface BusinessEntityConfig {
+  id: BusinessEntityId;
+  name: string;
+  shortName: string;
+  legalType: 'Private Limited Company' | 'Sole Proprietorship';
+  tradeName: string;
+  cinOrReg: string;
+  gstin: string;
+  pan: string;
+  address: string;
+  stateCode: string; // "24"
+  bankAccount: string;
+  bankName: string;
+  ifsc: string;
+  roleDescription: string;
+  creditLimitWithParentPaise?: number; // e.g. ₹50,00,000
+  defaultCreditPeriodDays?: number;    // e.g. 45 days (up to 90 days)
+  colorCode: string;
+}
+
 export interface BusinessEntity {
   id: string;
   name: string;
@@ -141,6 +163,26 @@ export interface PackingBatch {
   closedAt?: string;
 }
 
+// Customer Channel Classifications (Sections 2 & 3 of Business Structure)
+export type CustomerChannel =
+  // Main Pvt. Ltd. (Exclusive Strategic Accounts)
+  | 'hq_depot'            // Headquarters & Home-State Depot
+  | 'export'              // Direct Exports & International Buyers
+  | 'modern_trade'        // Modern Trade Supermarkets & Regional Chains
+  | 'institutional_large' // Large Institutional Consumers
+  | 'fmcg_chain'          // Large FMCG & Multi-outlet Restaurant Chains
+  | 'horeca_large'        // Large HORECA Groups & Multi-property Hotel Chains
+  | 'industrial_mfg'      // Industrial & Ingredient Manufacturing (ITC, Haldiram's scale)
+  | 'private_label'       // Private-Label & Contract Manufacturing
+  // Sister Proprietorship (Exclusive Gujarat Routine Distribution)
+  | 'cfa_distributor'     // CFA Operations & Downstream Distributors
+  | 'super_stockist'      // Super-Stockists (SS) & Stockists
+  | 'small_retailer'      // Small & Medium Kirana Retailers
+  | 'quick_commerce'      // E-Commerce & Quick-Commerce (Zepto, Blinkit, Instamart)
+  | 'd2c'                 // Direct-to-Consumer
+  | 'horeca_small'        // Independent Restaurants, Cafés & Small Food-service
+  | 'regional_trade';     // General Secondary Regional Wholesale
+
 export interface Party {
   id: string;
   name: string;
@@ -150,6 +192,11 @@ export interface Party {
   city: string;
   creditDays: number;
   outstandingPaise: number; // positive = we owe them, negative = they owe us
+  channel?: CustomerChannel;
+  assignedEntityId?: BusinessEntityId;
+  pan?: string;
+  state?: string;
+  creditLimitPaise?: number;
 }
 
 export interface Account {
@@ -158,6 +205,7 @@ export interface Account {
   type: 'cash' | 'bank' | 'upi' | 'petty_cash';
   accountNoMasked?: string;
   balancePaise: number;
+  entityId?: BusinessEntityId; // 'pvt_ltd' or 'sister_prop'
 }
 
 export interface Transaction {
@@ -178,6 +226,7 @@ export interface Transaction {
   batchId?: string;
   notes?: string;
   hasAttachment?: boolean;
+  entityId?: BusinessEntityId; // 'pvt_ltd' or 'sister_prop'
 }
 
 export interface Bill {
@@ -193,6 +242,7 @@ export interface Bill {
   paidPaise: number;
   status: 'pending' | 'part_paid' | 'paid';
   itemsDescription: string;
+  entityId?: BusinessEntityId; // 'pvt_ltd' or 'sister_prop'
 }
 
 export interface MachineAsset {
@@ -614,5 +664,266 @@ export interface ExportShipment {
   blOrAwbNumber?: string;
   blDate?: string;
   notes?: string;
+}
+
+// Channel Assignment Definitions and Helper functions (Sections 2 & 3)
+export const CHANNEL_DETAILS: Record<
+  CustomerChannel,
+  {
+    name: string;
+    entityId: BusinessEntityId;
+    entityName: string;
+    description: string;
+    defaultCreditDays: number;
+    badgeColor: string;
+  }
+> = {
+  hq_depot: {
+    name: 'Headquarters & Home-State Depot',
+    entityId: 'pvt_ltd',
+    entityName: 'Main Pvt. Ltd.',
+    description: 'Direct company billing for internal depot replenishment and corporate supplies',
+    defaultCreditDays: 15,
+    badgeColor: 'blue',
+  },
+  export: {
+    name: 'Exports & International Buyers',
+    entityId: 'pvt_ltd',
+    entityName: 'Main Pvt. Ltd.',
+    description: 'FOB/CIF international shipments via Mundra Port under GST LUT Rule 96A',
+    defaultCreditDays: 30,
+    badgeColor: 'indigo',
+  },
+  modern_trade: {
+    name: 'Modern Trade Supermarket Chains',
+    entityId: 'pvt_ltd',
+    entityName: 'Main Pvt. Ltd.',
+    description: 'National and regional organized retail chains (DMart, Reliance Retail, Star Bazaar)',
+    defaultCreditDays: 45,
+    badgeColor: 'purple',
+  },
+  institutional_large: {
+    name: 'Large Institutional Customers',
+    entityId: 'pvt_ltd',
+    entityName: 'Main Pvt. Ltd.',
+    description: 'High-consumption corporate canteens, railways, airlines, defense, hospitals',
+    defaultCreditDays: 30,
+    badgeColor: 'cyan',
+  },
+  fmcg_chain: {
+    name: 'Large FMCG & Food-Service Chains',
+    entityId: 'pvt_ltd',
+    entityName: 'Main Pvt. Ltd.',
+    description: 'Multi-outlet quick-service restaurants, state-wide food franchise groups',
+    defaultCreditDays: 30,
+    badgeColor: 'teal',
+  },
+  horeca_large: {
+    name: 'Large HORECA Accounts',
+    entityId: 'pvt_ltd',
+    entityName: 'Main Pvt. Ltd.',
+    description: 'Star hotel chains, national resort chains, large-scale luxury catering companies',
+    defaultCreditDays: 30,
+    badgeColor: 'emerald',
+  },
+  industrial_mfg: {
+    name: 'Industrial & Manufacturing (Ingredients)',
+    entityId: 'pvt_ltd',
+    entityName: 'Main Pvt. Ltd.',
+    description: 'Large food manufacturers using our spices as bulk ingredients (ITC, Haldiram scale)',
+    defaultCreditDays: 45,
+    badgeColor: 'amber',
+  },
+  private_label: {
+    name: 'Private-Label & Contract Manufacturing',
+    entityId: 'pvt_ltd',
+    entityName: 'Main Pvt. Ltd.',
+    description: 'OEM contract manufacturing and customised packaging under external brands',
+    defaultCreditDays: 30,
+    badgeColor: 'violet',
+  },
+
+  // Sister Proprietorship Channels
+  cfa_distributor: {
+    name: 'CFA Operations & Distributors',
+    entityId: 'sister_prop',
+    entityName: 'Sister Proprietorship',
+    description: 'Primary carrying & forwarding agent dispatches and wholesale distributor billing',
+    defaultCreditDays: 21,
+    badgeColor: 'amber',
+  },
+  super_stockist: {
+    name: 'Super-Stockists (SS) & Stockists',
+    entityId: 'sister_prop',
+    entityName: 'Sister Proprietorship',
+    description: 'District and taluka level super-stockists holding secondary buffer inventory',
+    defaultCreditDays: 21,
+    badgeColor: 'orange',
+  },
+  small_retailer: {
+    name: 'Small & Medium Retailers (Kirana)',
+    entityId: 'sister_prop',
+    entityName: 'Sister Proprietorship',
+    description: 'Independent grocery stores, provision shops, neighborhood spices retailers',
+    defaultCreditDays: 14,
+    badgeColor: 'rose',
+  },
+  quick_commerce: {
+    name: 'E-Commerce & Quick-Commerce',
+    entityId: 'sister_prop',
+    entityName: 'Sister Proprietorship',
+    description: 'Dark store fulfillment centers (Blinkit, Zepto, Swiggy Instamart, Amazon)',
+    defaultCreditDays: 15,
+    badgeColor: 'pink',
+  },
+  d2c: {
+    name: 'Direct-to-Consumer (D2C)',
+    entityId: 'sister_prop',
+    entityName: 'Sister Proprietorship',
+    description: 'Direct retail website orders, factory-outlet retail buyers, telephone deliveries',
+    defaultCreditDays: 0,
+    badgeColor: 'emerald',
+  },
+  horeca_small: {
+    name: 'Independent Cafés & Local HORECA',
+    entityId: 'sister_prop',
+    entityName: 'Sister Proprietorship',
+    description: 'Standalone restaurants, sweet shops, street-food kitchens, local party caterers',
+    defaultCreditDays: 7,
+    badgeColor: 'yellow',
+  },
+  regional_trade: {
+    name: 'Regional Gujarat Secondary Trade',
+    entityId: 'sister_prop',
+    entityName: 'Sister Proprietorship',
+    description: 'Route-van cash/credit trade, rural haat wholesalers, semi-bulk trade packs',
+    defaultCreditDays: 14,
+    badgeColor: 'lime',
+  },
+};
+
+export const isMainCompanyChannel = (channel: CustomerChannel): boolean => {
+  return CHANNEL_DETAILS[channel]?.entityId === 'pvt_ltd';
+};
+
+export const isSisterCompanyChannel = (channel: CustomerChannel): boolean => {
+  return CHANNEL_DETAILS[channel]?.entityId === 'sister_prop';
+};
+
+// Inter-Entity Periodic Stock Allocation Engine (Section 4)
+export type AllocationCycleType = 'biweekly' | 'monthly';
+
+export interface InterEntityStockAllocation {
+  id: string;
+  allocationNumber: string; // e.g. ALC-2026-10-C1
+  cycle: AllocationCycleType;
+  periodStart: string;
+  periodEnd: string;
+  creditDueDate: string; // Agreed settlement date (up to 90 days)
+  sourceEntityId: 'pvt_ltd';
+  destinationEntityId: 'sister_prop';
+  totalAllocatedGrams: number;
+  totalValuationPaise: number;
+  challanIds: string[]; // Delivery Challans linked
+  status: 'active' | 'partially_settled' | 'fully_settled' | 'closed';
+  settledAmountPaise: number;
+  balanceOutstandingPaise: number;
+  notes?: string;
+}
+
+// Sister Downstream Secondary Billing (Customer Invoices - Section 3)
+export interface SisterDownstreamInvoiceItem {
+  itemId: string;
+  sku: string;
+  name: string;
+  packSizeGrams: number;
+  batchNo: string;
+  qtyPacks: number;
+  totalGrams: number;
+  ratePerPackPaise: number;
+  taxableAmountPaise: number;
+  gstRatePct: number;
+  cgstPaise: number;
+  sgstPaise: number;
+  totalPaise: number;
+}
+
+export interface SisterDownstreamInvoice {
+  id: string;
+  invoiceNo: string; // e.g. DIS-2026-10-001
+  date: string;
+  channel: CustomerChannel;
+  customerId: string;
+  customerName: string;
+  customerGstin?: string;
+  customerCity: string;
+  customerPhone?: string;
+  paymentDueDate: string;
+  paymentStatus: 'unpaid' | 'part_paid' | 'paid';
+  items: SisterDownstreamInvoiceItem[];
+  totalGrams: number;
+  taxableAmountPaise: number;
+  cgstPaise: number;
+  sgstPaise: number;
+  totalPaise: number;
+  paidAmountPaise: number;
+  balanceDuePaise: number;
+  payments?: {
+    id: string;
+    date: string;
+    amountPaise: number;
+    mode: string;
+    reference: string;
+  }[];
+  notes?: string;
+}
+
+// Inter-Entity Financial Settlement Voucher (Section 4 & 5)
+export interface InterEntitySettlement {
+  id: string;
+  settlementNo: string; // e.g. IES-2026-10-001
+  date: string;
+  amountPaise: number;
+  remittedFromAccountId: string; // Sister Bank (e.g. SBI)
+  depositedToAccountId: string;   // Main Bank (e.g. HDFC)
+  paymentMode: 'NEFT' | 'RTGS' | 'IMPS' | 'Cheque';
+  bankUtrRef: string;
+  settlementType: 'stock_advance' | 'interim_settlement' | 'final_cycle_clearance';
+  linkedAllocationIds?: string[];
+  linkedChallanIds?: string[];
+  notes?: string;
+  verifiedByAuditor: boolean;
+}
+
+// Complete Dual-Entity Ledger & Physical Stock Reconciliation State (Section 5)
+export interface StockFlowReconciliation {
+  periodLabel: string;
+  openingDepotStockGrams: number;
+  suppliedByMainGrams: number;
+  receivedAtSisterGrams: number;
+  inTransitGrams: number;
+  soldDownstreamGrams: number;
+  closingDepotStockGrams: number;
+  damagedOrReturnedGrams: number;
+  discrepancyGrams: number; // Received - (Sold + Closing + Damaged)
+  status: 'balanced' | 'variance_detected';
+}
+
+export interface InterEntityLedgerReconciliation {
+  periodLabel: string;
+  mainReceivableFromSisterPaise: number;  // Sundry Debtor in Main Books
+  sisterPayableToMainPaise: number;        // Sundry Creditor in Sister Books
+  netDiscrepancyPaise: number;             // Must be 0 in balanced state
+  inTransitDispatchesPaise: number;        // Challans not yet acknowledged
+  uncreditedSettlementsPaise: number;       // Remittances in transit
+  creditLimitPaise: number;               // Agreed limit (e.g. ₹50L)
+  creditUtilizationPct: number;
+  status: 'matched' | 'unmatched_discrepancy';
+  alerts: {
+    type: 'warning' | 'error' | 'info';
+    code: string;
+    message: string;
+    referenceId?: string;
+  }[];
 }
 
