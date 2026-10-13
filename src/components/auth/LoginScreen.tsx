@@ -103,20 +103,30 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form
+            id="enterprise-login-form"
+            name="login"
+            method="post"
+            action="#"
+            autoComplete="on"
+            onSubmit={handleSubmit}
+            className="space-y-4"
+          >
             <div>
-              <label className="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">
+              <label htmlFor="enterprise-email" className="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">
                 Official Email Address
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
                 <input
+                  id="enterprise-email"
+                  name="username"
                   type="email"
                   required
                   autoComplete="username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@adalajfoods.com"
+                  placeholder="name@enterprise.com"
                   className={`w-full pl-9 pr-3 py-2.5 rounded-xl border text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-[#9A2229]/30 ${
                     isDark
                       ? 'bg-slate-950 border-slate-700 text-white placeholder-slate-500'
@@ -127,12 +137,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">
+              <label htmlFor="enterprise-password" className="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">
                 Password
               </label>
               <div className="relative">
                 <Lock className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
                 <input
+                  id="enterprise-password"
+                  name="password"
                   type="password"
                   required
                   autoComplete="current-password"

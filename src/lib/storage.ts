@@ -38,6 +38,13 @@ import {
   InterFirmTransfer,
   TransferStatus,
   ExportShipment,
+  SalesInvoice,
+  SalesInvoiceItem,
+  SalesQuotation,
+  VoidedInvoiceAudit,
+  PackingFloorFulfillmentJob,
+  FinancialHorizon,
+  FinancialIntelligenceMetrics,
 } from '../types';
 
 const STORAGE_KEYS = {
@@ -68,6 +75,10 @@ const STORAGE_KEYS = {
   PURCHASE_ORDERS: 'adalaj_purchase_orders_v1',
   INTERFIRM_TRANSFERS: 'adalaj_interfirm_transfers_v1',
   EXPORT_SHIPMENTS: 'adalaj_export_shipments_v1',
+  SALES_INVOICES: 'adalaj_sales_invoices_v1',
+  SALES_QUOTATIONS: 'adalaj_sales_quotations_v1',
+  VOIDED_INVOICES: 'adalaj_voided_invoices_v1',
+  PACKING_FLOOR_JOBS: 'adalaj_packing_floor_jobs_v1',
 };
 
 // Initial Seed Data
@@ -2251,6 +2262,362 @@ const initialInterEntitySettlements: InterEntitySettlement[] = [
   },
 ];
 
+const initialSalesInvoices: SalesInvoice[] = [
+  {
+    id: 'inv_b2b_001',
+    invoiceNo: 'ADL-INV-2026-0001',
+    invoiceType: 'domestic_tax_invoice',
+    entityId: 'pvt_ltd',
+    date: '2026-10-10',
+    dueDate: '2026-11-09',
+    buyerPartyId: 'pty_mod_dmart',
+    buyerName: 'Gujarat Modern Hypermarkets Ltd. (Avenue Supermarts)',
+    buyerGstin: '24AAACG1234F1Z9',
+    buyerPan: 'AAACG1234F',
+    buyerAddress: 'Block C, SG Corporate Tower, Ahmedabad - 380054, Gujarat',
+    buyerState: 'Gujarat',
+    buyerStateCode: '24',
+    buyerCountry: 'India',
+    creditTerms: 'credit_30',
+    creditDays: 30,
+    creditSurchargeRatePct: 2.0, // Commercial credit rule: +2% surcharge
+    creditSurchargePaise: 386800, // ₹3,868.00
+    extendedCreditInterestPaise: 0,
+    subtotalTaxablePaise: 19340000, // ₹1,93,400.00
+    totalTaxablePaise: 19726800, // ₹1,97,268.00
+    cgstPaise: 493170, // 2.5% CGST = ₹4,931.70
+    sgstPaise: 493170, // 2.5% SGST = ₹4,931.70
+    igstPaise: 0,
+    totalTaxPaise: 986340,
+    roundOffPaise: -40,
+    grandTotalPaise: 20713100, // ₹2,07,131.00
+    paidAmountPaise: 0,
+    balanceDuePaise: 20713100,
+    status: 'issued',
+    eWayBillNo: '241893021940',
+    irn: '5a28b9c1d0e4f8a37b12c4d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9',
+    isExport: false,
+    currency: 'INR',
+    exchangeRate: 1.0,
+    foreignAmount: 207131.0,
+    items: [
+      {
+        id: 'inv_it_01',
+        sku: 'FG-HLD-100G',
+        name: 'Turmeric Powder (Agmark Special) 100g Pouches',
+        description: 'Standard 100g consumer pouches in master shipper boxes',
+        hsnCode: '0910',
+        packSizeGrams: 100,
+        quantityUnits: 2500,
+        unitType: 'pouches',
+        ratePerUnitPaise: 3800, // ₹38.00
+        taxableAmountPaise: 9500000,
+        gstRatePct: 5,
+        cgstPaise: 237500,
+        sgstPaise: 237500,
+        igstPaise: 0,
+        totalPaise: 9975000,
+      },
+      {
+        id: 'inv_it_02',
+        sku: 'FG-MRCH-200G',
+        name: 'Red Chilli Powder (Stemless Reshamapatti) 200g Pouches',
+        description: 'Standard 200g nitrogen-sealed flexible pouches',
+        hsnCode: '0904',
+        packSizeGrams: 200,
+        quantityUnits: 1200,
+        unitType: 'pouches',
+        ratePerUnitPaise: 8200, // ₹82.00
+        taxableAmountPaise: 9840000,
+        gstRatePct: 5,
+        cgstPaise: 246000,
+        sgstPaise: 246000,
+        igstPaise: 0,
+        totalPaise: 10332000,
+      },
+    ],
+    notes: 'Payment term: 30 days post delivery. Credit surcharge of 2% included.',
+    createdAt: '2026-10-10T10:00:00.000Z',
+  },
+  {
+    id: 'inv_b2b_002',
+    invoiceNo: 'ADL-EXP-2026-0001',
+    invoiceType: 'export_commercial',
+    entityId: 'pvt_ltd',
+    date: '2026-10-12',
+    dueDate: '2026-10-22',
+    buyerName: 'Al-Madina Spice Trading LLC, Dubai, UAE',
+    buyerAddress: 'Warehouse 14, Al Ras Spice Market, Deira, Dubai, United Arab Emirates',
+    buyerCountry: 'United Arab Emirates',
+    buyerState: 'Dubai',
+    buyerStateCode: '99',
+    creditTerms: 'advance',
+    creditDays: 0,
+    creditSurchargeRatePct: 0,
+    creditSurchargePaise: 0,
+    extendedCreditInterestPaise: 0,
+    subtotalTaxablePaise: 208750000, // ₹20,87,500.00 ($25,000 @ ₹83.50)
+    totalTaxablePaise: 208750000,
+    cgstPaise: 0,
+    sgstPaise: 0,
+    igstPaise: 0, // Zero rated export under LUT Rule 96A
+    totalTaxPaise: 0,
+    roundOffPaise: 0,
+    grandTotalPaise: 208750000,
+    paidAmountPaise: 208750000,
+    balanceDuePaise: 0,
+    status: 'paid',
+    isExport: true,
+    currency: 'USD',
+    exchangeRate: 83.5,
+    foreignAmount: 25000.0,
+    incoterms: 'FOB',
+    portOfLoading: 'Mundra Port, Gujarat (INMUN1)',
+    portOfDischarge: 'Jebel Ali Port, UAE (AEJEA)',
+    destinationCountry: 'United Arab Emirates',
+    iecNo: '2418002931',
+    lutArn: 'AD240426001928K',
+    cresNo: 'SB/REG/GJ/2026/0419',
+    swiftBic: 'HDFCINBBXXX',
+    adCode: '0412894',
+    items: [
+      {
+        id: 'exp_it_01',
+        sku: 'RAW-HLD-25KG',
+        name: 'Pure Ground Turmeric Powder (Agmark Special Quality)',
+        description: 'Packed in 25kg multi-wall paper poly-lined export sacks',
+        hsnCode: '0910',
+        packSizeGrams: 25000,
+        quantityUnits: 600,
+        unitType: 'boxes',
+        ratePerUnitPaise: 347917, // $41.67 per 25kg sack
+        taxableAmountPaise: 208750000,
+        gstRatePct: 0,
+        cgstPaise: 0,
+        sgstPaise: 0,
+        igstPaise: 0,
+        totalPaise: 208750000,
+      },
+    ],
+    notes: 'Full container load (FCL) dispatch from Mundra Port. Export under Bond/LUT without payment of IGST.',
+    createdAt: '2026-10-12T14:30:00.000Z',
+  },
+];
+
+const initialSalesQuotations: SalesQuotation[] = [
+  {
+    id: 'quo_horeca_001',
+    quotationNo: 'ADL-QUO-2026-0001',
+    date: '2026-10-11',
+    validUntilDate: '2026-11-10',
+    entityId: 'pvt_ltd',
+    buyerName: 'Taj Vivanta & Gateway Palace Catering Division',
+    buyerGstin: '24AABCT9981P1Z3',
+    buyerAddress: 'SG Highway Luxury Hotel Complex, Bodakdev, Ahmedabad - 380054',
+    buyerCountry: 'India',
+    creditTerms: 'credit_30',
+    creditSurchargeRatePct: 2.0,
+    creditSurchargePaise: 800000,
+    subtotalTaxablePaise: 40000000, // ₹4,00,000.00
+    estimatedTaxPaise: 2040000, // 5% GST
+    grandTotalPaise: 42840000, // ₹4,28,400.00
+    termsAndConditions: [
+      'Validity: This formal quotation is valid for 30 calendar days from the date of issue.',
+      'Quality Standard: All spices are 100% steam-sterilized, pure whole ground, zero added starch/color.',
+      'Payment: Standard terms are 30 days credit from invoice date (credit surcharge of 2% applicable).',
+      'Delivery: Delivered duty paid (DDP) to Taj central kitchen store, SG Highway, Ahmedabad.',
+    ],
+    status: 'sent',
+    createdAt: '2026-10-11T11:00:00.000Z',
+    items: [
+      {
+        id: 'quo_it_01',
+        sku: 'FG-HLD-500G',
+        name: 'Turmeric Powder (Haldi) 500g Commercial Kitchen Pack',
+        description: '2 pcs bundles packed in 20kg shipper cartons',
+        hsnCode: '0910',
+        packSizeGrams: 500,
+        quantityUnits: 1000,
+        unitType: 'pouches',
+        ratePerUnitPaise: 18000, // ₹180.00
+        taxableAmountPaise: 18000000,
+        gstRatePct: 5,
+        cgstPaise: 450000,
+        sgstPaise: 450000,
+        igstPaise: 0,
+        totalPaise: 18900000,
+      },
+      {
+        id: 'quo_it_02',
+        sku: 'FG-MRC-500G',
+        name: 'Kashmiri Mild Red Chilli Powder 500g Pack',
+        description: 'High color value, low heat commercial packs',
+        hsnCode: '0904',
+        packSizeGrams: 500,
+        quantityUnits: 800,
+        unitType: 'pouches',
+        ratePerUnitPaise: 27500, // ₹275.00
+        taxableAmountPaise: 22000000,
+        gstRatePct: 5,
+        cgstPaise: 550000,
+        sgstPaise: 550000,
+        igstPaise: 0,
+        totalPaise: 23100000,
+      },
+    ],
+  },
+];
+
+const initialPackingFloorJobs: PackingFloorFulfillmentJob[] = [
+  {
+    id: 'job_flr_001',
+    jobNo: 'JOB-2026-10-001',
+    date: '2026-10-10',
+    customerName: 'Taj Vivanta & Gateway Palace Catering Division',
+    orderRef: 'PO-TAJ-2026-881',
+    spiceName: 'Turmeric Powder (Pure Agmark Grade)',
+    targetGrams: 1000000, // 1,000 kg
+    targetPacks: 10000, // 10,000 units of 100g
+    primaryTier: 'pouch_100g',
+    secondaryTier: 'pack_10pcs', // 10 pcs pack = 1kg bundle
+    tertiaryTier: 'box_20kg', // 20kg 5-ply master box (contains 20 x 1kg bundles = 200 pouches)
+    isMixedAssortedShipper: false,
+    dailyPackQuotaUnits: 2500,
+    packedGramsCompleted: 700000, // 700 kg
+    packedUnitsCompleted: 7000,
+    deficitGrams: 300000, // 300 kg remaining
+    deficitUnits: 3000,
+    fulfillmentPct: 70.0,
+    dailyProgressRecords: [
+      {
+        date: '2026-10-10',
+        shift: 'morning',
+        supervisor: 'Pravin Solanki',
+        packedUnits: 2400,
+        packedGrams: 240000,
+        spillWastageGrams: 1200,
+      },
+      {
+        date: '2026-10-11',
+        shift: 'morning',
+        supervisor: 'Pravin Solanki',
+        packedUnits: 2500,
+        packedGrams: 250000,
+        spillWastageGrams: 1100,
+      },
+      {
+        date: '2026-10-12',
+        shift: 'morning',
+        supervisor: 'Pravin Solanki',
+        packedUnits: 2100,
+        packedGrams: 210000,
+        spillWastageGrams: 900,
+      },
+    ],
+    status: 'secondary_bundling',
+    lotTraceability: {
+      rawSpiceSupplierLot: 'UNJ-RAJ-984 (Unjha Mandi)',
+      grindingBatchNo: 'BAT-2026-10-01',
+      primaryPackLotNo: 'PL-HLD-100G-01',
+      tertiaryShipperBoxBarcodes: ['BOX-TAJ-001', 'BOX-TAJ-002', 'BOX-TAJ-003', 'BOX-TAJ-035'],
+      dispatchInvoiceRef: 'ADL-INV-2026-0001',
+    },
+  },
+  {
+    id: 'job_flr_002',
+    jobNo: 'JOB-2026-10-002',
+    date: '2026-10-11',
+    customerName: 'Gujarat General Kirana Retail Distribution',
+    orderRef: 'ORD-DIS-2026-1004',
+    spiceName: 'Guntur Red Chilli Powder (₹10 Pouch Sachet)',
+    targetGrams: 600000, // 600 kg
+    targetPacks: 30000, // 30,000 pouches of 20g
+    primaryTier: 'pouch_10rs',
+    secondaryTier: 'bundle_30pcs', // 3 strips of 10 pcs = 30 pcs hanging bundle
+    tertiaryTier: 'pp_bag_25kg', // 25kg Woven PP bag shipper (contains ~41 bundles)
+    isMixedAssortedShipper: false,
+    dailyPackQuotaUnits: 7500,
+    packedGramsCompleted: 360000,
+    packedUnitsCompleted: 18000,
+    deficitGrams: 240000,
+    deficitUnits: 12000,
+    fulfillmentPct: 60.0,
+    dailyProgressRecords: [
+      {
+        date: '2026-10-11',
+        shift: 'evening',
+        supervisor: 'Pravin Solanki',
+        packedUnits: 9000,
+        packedGrams: 180000,
+        spillWastageGrams: 850,
+      },
+      {
+        date: '2026-10-12',
+        shift: 'morning',
+        supervisor: 'Pravin Solanki',
+        packedUnits: 9000,
+        packedGrams: 180000,
+        spillWastageGrams: 900,
+      },
+    ],
+    status: 'primary_packing',
+    lotTraceability: {
+      rawSpiceSupplierLot: 'GNT-TEJA-332 (Shree Balaji Spice Mills)',
+      grindingBatchNo: 'BAT-2026-10-02',
+      primaryPackLotNo: 'PL-MRC-10RS-02',
+      tertiaryShipperBoxBarcodes: ['BAG-DIS-01', 'BAG-DIS-02', 'BAG-DIS-14'],
+    },
+  },
+  {
+    id: 'job_flr_003',
+    jobNo: 'JOB-2026-10-003',
+    date: '2026-10-12',
+    customerName: 'Haldiram Snacks & Sweets Mfg Pvt Ltd',
+    orderRef: 'PO-HLD-OCT-990',
+    spiceName: 'Fine Dhaniya (Coriander) Powder Industrial Bulk',
+    targetGrams: 5000000, // 5,000 kg
+    targetPacks: 100, // 100 master bags of 50kg
+    primaryTier: 'bulk_50kg', // Direct 50kg loose filling
+    secondaryTier: 'none_direct',
+    tertiaryTier: 'pp_bag_50kg',
+    isMixedAssortedShipper: false,
+    dailyPackQuotaUnits: 50,
+    packedGramsCompleted: 4000000,
+    packedUnitsCompleted: 80,
+    deficitGrams: 1000000,
+    deficitUnits: 20,
+    fulfillmentPct: 80.0,
+    dailyProgressRecords: [
+      {
+        date: '2026-10-12',
+        shift: 'morning',
+        supervisor: 'Pravin Solanki',
+        packedUnits: 50,
+        packedGrams: 2500000,
+        spillWastageGrams: 2400,
+      },
+      {
+        date: '2026-10-12',
+        shift: 'evening',
+        supervisor: 'Pravin Solanki',
+        packedUnits: 30,
+        packedGrams: 1500000,
+        spillWastageGrams: 1500,
+      },
+    ],
+    status: 'tertiary_boxed',
+    lotTraceability: {
+      rawSpiceSupplierLot: 'RAM-COR-419 (Ramganj Mandi)',
+      grindingBatchNo: 'BAT-2026-10-03',
+      primaryPackLotNo: 'PL-DHN-50KG-01',
+      tertiaryShipperBoxBarcodes: ['SACK-HLD-001', 'SACK-HLD-080'],
+    },
+  },
+];
+
+const initialVoidedInvoices: VoidedInvoiceAudit[] = [];
+
+
 // In-Memory & LocalStorage wrapper
 class StorageEngine {
   private get<T>(key: string, fallback: T): T {
@@ -3488,13 +3855,347 @@ class StorageEngine {
     return list.filter((b) => b.entityId === entityId || !b.entityId);
   }
 
-  // Reset to initial starter template
+  // ============================================================================
+  // SALES INVOICES & QUOTATIONS (DOMESTIC & EXPORT B2B)
+  // ============================================================================
+  getSalesInvoices(): SalesInvoice[] {
+    return this.get<SalesInvoice[]>(STORAGE_KEYS.SALES_INVOICES, initialSalesInvoices);
+  }
+
+  getSalesInvoicesByEntity(entityId: BusinessEntityId | 'all'): SalesInvoice[] {
+    const list = this.getSalesInvoices();
+    if (entityId === 'all') return list;
+    return list.filter((inv) => inv.entityId === entityId);
+  }
+
+  addSalesInvoice(inv: SalesInvoice): void {
+    const list = this.getSalesInvoices();
+    this.set(STORAGE_KEYS.SALES_INVOICES, [inv, ...list]);
+    this.logOutbox('create', 'bill', `Issued Sales Invoice ${inv.invoiceNo} (₹${(inv.grandTotalPaise / 100).toFixed(2)})`);
+
+    // If buyer is an existing party, update party outstanding balance
+    if (inv.buyerPartyId) {
+      const parties = this.getParties();
+      const p = parties.find((pt) => pt.id === inv.buyerPartyId);
+      if (p) {
+        // Party owes us: negative outstanding
+        p.outstandingPaise = (p.outstandingPaise || 0) - inv.grandTotalPaise;
+        this.saveParties(parties);
+      }
+    }
+  }
+
+  voidSalesInvoice(invoiceNo: string, reason: string, voidedBy = 'Admin'): void {
+    const list = this.getSalesInvoices();
+    const inv = list.find((i) => i.invoiceNo === invoiceNo);
+    if (!inv) return;
+
+    inv.status = 'voided';
+    inv.voidReason = reason;
+    inv.voidedAt = new Date().toISOString();
+    this.set(STORAGE_KEYS.SALES_INVOICES, list);
+
+    // Record non-destructive audit
+    const auditList = this.getVoidedInvoicesAudit();
+    const auditRecord: VoidedInvoiceAudit = {
+      id: `void_${Date.now()}`,
+      originalInvoiceNo: inv.invoiceNo,
+      invoiceType: inv.invoiceType,
+      voidedAt: inv.voidedAt,
+      voidedBy,
+      reason,
+      originalGrandTotalPaise: inv.grandTotalPaise,
+      originalDataJson: JSON.stringify(inv),
+    };
+    this.set(STORAGE_KEYS.VOIDED_INVOICES, [auditRecord, ...auditList]);
+    this.logOutbox('void', 'bill', `Voided invoice ${invoiceNo}: ${reason}`);
+  }
+
+  recordInvoicePayment(invoiceNo: string, amountPaise: number, mode: string, reference: string): void {
+    const list = this.getSalesInvoices();
+    const inv = list.find((i) => i.invoiceNo === invoiceNo);
+    if (!inv) return;
+
+    inv.paidAmountPaise = (inv.paidAmountPaise || 0) + amountPaise;
+    inv.balanceDuePaise = Math.max(0, inv.grandTotalPaise - inv.paidAmountPaise);
+    if (inv.balanceDuePaise === 0) {
+      inv.status = 'paid';
+    } else {
+      inv.status = 'part_paid';
+    }
+    this.set(STORAGE_KEYS.SALES_INVOICES, list);
+    this.logOutbox('update', 'bill', `Recorded payment of ₹${(amountPaise / 100).toFixed(2)} on invoice ${invoiceNo}`);
+  }
+
+  // Formal Quotations
+  getSalesQuotations(): SalesQuotation[] {
+    return this.get<SalesQuotation[]>(STORAGE_KEYS.SALES_QUOTATIONS, initialSalesQuotations);
+  }
+
+  addSalesQuotation(quo: SalesQuotation): void {
+    const list = this.getSalesQuotations();
+    this.set(STORAGE_KEYS.SALES_QUOTATIONS, [quo, ...list]);
+    this.logOutbox('create', 'bill', `Generated Quotation ${quo.quotationNo} for ${quo.buyerName}`);
+  }
+
+  convertQuotationToInvoice(quotationNo: string): SalesInvoice | null {
+    const quotations = this.getSalesQuotations();
+    const quo = quotations.find((q) => q.quotationNo === quotationNo);
+    if (!quo) return null;
+
+    const invoices = this.getSalesInvoices();
+    const nextSeq = invoices.length + 1;
+    const invNo = `ADL-INV-2026-${String(nextSeq).padStart(4, '0')}`;
+
+    const newInvoice: SalesInvoice = {
+      id: `inv_conv_${Date.now()}`,
+      invoiceNo: invNo,
+      invoiceType: 'domestic_tax_invoice',
+      entityId: quo.entityId,
+      date: new Date().toISOString().split('T')[0],
+      dueDate: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+      buyerName: quo.buyerName,
+      buyerGstin: quo.buyerGstin,
+      buyerAddress: quo.buyerAddress,
+      buyerCountry: quo.buyerCountry || 'India',
+      buyerState: 'Gujarat',
+      buyerStateCode: '24',
+      items: quo.items,
+      subtotalTaxablePaise: quo.subtotalTaxablePaise,
+      creditTerms: quo.creditTerms || 'on_dispatch',
+      creditDays: quo.creditTerms === 'credit_30' ? 30 : 0,
+      creditSurchargeRatePct: quo.creditSurchargeRatePct || 0,
+      creditSurchargePaise: quo.creditSurchargePaise || 0,
+      extendedCreditInterestPaise: 0,
+      totalTaxablePaise: quo.subtotalTaxablePaise + (quo.creditSurchargePaise || 0),
+      cgstPaise: Math.round(quo.estimatedTaxPaise / 2),
+      sgstPaise: quo.estimatedTaxPaise - Math.round(quo.estimatedTaxPaise / 2),
+      igstPaise: 0,
+      totalTaxPaise: quo.estimatedTaxPaise,
+      roundOffPaise: 0,
+      grandTotalPaise: quo.grandTotalPaise,
+      paidAmountPaise: 0,
+      balanceDuePaise: quo.grandTotalPaise,
+      status: 'issued',
+      isExport: false,
+      currency: 'INR',
+      exchangeRate: 1.0,
+      foreignAmount: quo.grandTotalPaise / 100,
+      createdAt: new Date().toISOString(),
+    };
+
+    this.addSalesInvoice(newInvoice);
+    quo.status = 'converted';
+    quo.convertedInvoiceId = newInvoice.id;
+    this.set(STORAGE_KEYS.SALES_QUOTATIONS, quotations);
+    return newInvoice;
+  }
+
+  getVoidedInvoicesAudit(): VoidedInvoiceAudit[] {
+    return this.get<VoidedInvoiceAudit[]>(STORAGE_KEYS.VOIDED_INVOICES, initialVoidedInvoices);
+  }
+
+  // ============================================================================
+  // 3-TIER PACKAGING & FLOOR FULFILLMENT JOBS
+  // ============================================================================
+  getPackingFloorJobs(): PackingFloorFulfillmentJob[] {
+    return this.get<PackingFloorFulfillmentJob[]>(STORAGE_KEYS.PACKING_FLOOR_JOBS, initialPackingFloorJobs);
+  }
+
+  addPackingFloorJob(job: PackingFloorFulfillmentJob): void {
+    const list = this.getPackingFloorJobs();
+    this.set(STORAGE_KEYS.PACKING_FLOOR_JOBS, [job, ...list]);
+    this.logOutbox('create', 'batch', `Staged Floor Packing Job ${job.jobNo} for ${job.customerName}`);
+  }
+
+  updatePackingFloorJob(job: PackingFloorFulfillmentJob): void {
+    const list = this.getPackingFloorJobs().map((j) => (j.id === job.id ? job : j));
+    this.set(STORAGE_KEYS.PACKING_FLOOR_JOBS, list);
+    this.logOutbox('update', 'batch', `Updated Floor Packing Job ${job.jobNo}`);
+  }
+
+  recordPackingDailyProgress(
+    jobId: string,
+    shift: 'morning' | 'evening' | 'night',
+    supervisor: string,
+    unitsProduced: number,
+    gramsProduced: number,
+    spillWastageGrams: number
+  ): void {
+    const list = this.getPackingFloorJobs();
+    const job = list.find((j) => j.id === jobId);
+    if (!job) return;
+
+    job.dailyProgressRecords.push({
+      date: new Date().toISOString().split('T')[0],
+      shift,
+      supervisor,
+      packedUnits: unitsProduced,
+      packedGrams: gramsProduced,
+      spillWastageGrams,
+    });
+
+    job.packedUnitsCompleted += unitsProduced;
+    job.packedGramsCompleted += gramsProduced;
+    job.deficitUnits = Math.max(0, job.targetPacks - job.packedUnitsCompleted);
+    job.deficitGrams = Math.max(0, job.targetGrams - job.packedGramsCompleted);
+    job.fulfillmentPct = Math.min(100, Number(((job.packedUnitsCompleted / job.targetPacks) * 100).toFixed(1)));
+
+    if (job.fulfillmentPct >= 100) {
+      job.status = 'tertiary_boxed';
+    }
+
+    this.set(STORAGE_KEYS.PACKING_FLOOR_JOBS, list);
+    this.logOutbox('update', 'batch', `Logged progress on job ${job.jobNo}: +${unitsProduced} units packed`);
+  }
+
+  // ============================================================================
+  // ADVANCED FINANCIAL INTELLIGENCE & MULTI-PERIOD EXECUTIVE REPORT ENGINE
+  // ============================================================================
+  getFinancialIntelligence(
+    entityScope: BusinessEntityId | 'all' = 'all',
+    horizon: FinancialHorizon = 'monthly_mom',
+    monthStr = '2026-10'
+  ): FinancialIntelligenceMetrics {
+    // 1. Determine period factor
+    let scaleMultiplier = 1.0;
+    let periodLabel = 'October 2026 (Month-to-Date)';
+
+    if (horizon === 'daily_dod') {
+      scaleMultiplier = 1 / 25; // 1 operational day
+      periodLabel = 'Today vs Yesterday (Daily Operational DoD)';
+    } else if (horizon === 'annual_yoy') {
+      scaleMultiplier = 12.0;
+      periodLabel = 'FY 2026-2027 Annualized Forecast (YoY)';
+    } else if (horizon === 'specific_month') {
+      periodLabel = `Financial Year 2026-27 · Month: ${monthStr}`;
+    }
+
+    // 2. Base Turnovers (in Paise)
+    let pvtRevenue = 864000000;  // ₹86,40,000 Main Pvt. Ltd. (B2B + Export + Modern Trade)
+    let sisterRevenue = 381000000; // ₹38,10,000 Sister CFA & Downstream Secondary Sales
+
+    let revenuePaise = 0;
+    if (entityScope === 'pvt_ltd') {
+      revenuePaise = Math.round(pvtRevenue * scaleMultiplier);
+    } else if (entityScope === 'sister_prop') {
+      revenuePaise = Math.round(sisterRevenue * scaleMultiplier);
+    } else {
+      // Consolidated
+      revenuePaise = Math.round((pvtRevenue + sisterRevenue) * scaleMultiplier);
+    }
+
+    // 3. COGS Breakdown (Raw spices + packaging foils/pouches + floor labor wages) ~66%
+    const cogsPct = entityScope === 'sister_prop' ? 78.0 : 66.0;
+    const cogsPaise = Math.round((revenuePaise * cogsPct) / 100);
+
+    // 4. Gross Profit (GP)
+    const grossProfitPaise = revenuePaise - cogsPaise;
+    const gpMarginPct = Number(((grossProfitPaise / revenuePaise) * 100).toFixed(2));
+
+    // 5. OPEX (Operating Expenses: Rent, Power, Machine Spares, Logistics, Admin, CA) ~12%
+    const opexPct = entityScope === 'sister_prop' ? 8.5 : 12.0;
+    const opexPaise = Math.round((revenuePaise * opexPct) / 100);
+
+    // 6. EBITDA (Earnings Before Interest, Tax, Depreciation & Amortization)
+    const ebitdaPaise = grossProfitPaise - opexPaise;
+    const ebitdaMarginPct = Number(((ebitdaPaise / revenuePaise) * 100).toFixed(2));
+
+    // 7. Depreciation (Machinery & Plant Fixtures WDV) ~2.2%
+    const depreciationPaise = Math.round(28000000 * scaleMultiplier);
+
+    // 8. EBIT (Operating Profit)
+    const ebitPaise = ebitdaPaise - depreciationPaise;
+    const ebitMarginPct = Number(((ebitPaise / revenuePaise) * 100).toFixed(2));
+
+    // 9. Finance Cost (Interest on term loan & working capital) ~1.5%
+    const financeCostPaise = Math.round(18500000 * scaleMultiplier);
+
+    // 10. PBT (Profit Before Tax)
+    const pbtPaise = ebitPaise - financeCostPaise;
+    const pbtMarginPct = Number(((pbtPaise / revenuePaise) * 100).toFixed(2));
+
+    // 11. Income Tax Provision (25% for Pvt Ltd / 30% for Proprietorship)
+    const taxRatePct = entityScope === 'sister_prop' ? 30.0 : 25.0;
+    const taxProvisionPaise = Math.max(0, Math.round((pbtPaise * taxRatePct) / 100));
+
+    // 12. PAT / Net Profit (NP)
+    const patPaise = pbtPaise - taxProvisionPaise;
+    const patMarginPct = Number(((patPaise / revenuePaise) * 100).toFixed(2));
+
+    // 13. Statutory GST Position
+    const eligibleItcPaise = Math.round(98540000 * scaleMultiplier);
+    const outputGstLiabilityPaise = Math.round(62250000 * scaleMultiplier);
+    const netGstPositionPaise = outputGstLiabilityPaise - eligibleItcPaise; // negative = surplus ITC
+
+    // 14. Unit Economics per Kilogram Packed
+    const baseKg = entityScope === 'pvt_ltd' ? 34000 : entityScope === 'sister_prop' ? 14000 : 48000;
+    const totalKilogramsPacked = Math.round(baseKg * scaleMultiplier);
+
+    const opexPerKgPaise = totalKilogramsPacked > 0 ? Math.round(opexPaise / totalKilogramsPacked) : 0;
+    const cogsPerKgPaise = totalKilogramsPacked > 0 ? Math.round(cogsPaise / totalKilogramsPacked) : 0;
+    const totalCostPerKgPaise = opexPerKgPaise + cogsPerKgPaise;
+    const realizationPerKgPaise = totalKilogramsPacked > 0 ? Math.round(revenuePaise / totalKilogramsPacked) : 0;
+    const markupPerKgPaise = realizationPerKgPaise - totalCostPerKgPaise;
+    const markupPct = totalCostPerKgPaise > 0 ? Number(((markupPerKgPaise / totalCostPerKgPaise) * 100).toFixed(1)) : 0;
+
+    // 15. Period Comparison Variances
+    const previousRevenuePaise = Math.round(revenuePaise * 0.885); // +13% growth
+    const revenueGrowthPct = 13.0;
+    const gpGrowthPct = 15.2;
+    const patGrowthPct = 18.4;
+
+    return {
+      periodLabel,
+      horizon,
+      entityScope,
+      revenuePaise,
+      cogsPaise,
+      grossProfitPaise,
+      opexPaise,
+      ebitdaPaise,
+      depreciationPaise,
+      ebitPaise,
+      financeCostPaise,
+      pbtPaise,
+      taxProvisionPaise,
+      patPaise,
+      cogsPct,
+      gpMarginPct,
+      opexPct,
+      ebitdaMarginPct,
+      ebitMarginPct,
+      pbtMarginPct,
+      patMarginPct,
+      eligibleItcPaise,
+      outputGstLiabilityPaise,
+      netGstPositionPaise,
+      totalKilogramsPacked,
+      opexPerKgPaise,
+      cogsPerKgPaise,
+      totalCostPerKgPaise,
+      realizationPerKgPaise,
+      markupPerKgPaise,
+      markupPct,
+      previousRevenuePaise,
+      revenueGrowthPct,
+      gpGrowthPct,
+      patGrowthPct,
+    };
+  }
+
+  // Reset starter template to initial state
   resetStarterTemplate(): void {
     this.set(STORAGE_KEYS.ENTITY, initialEntity);
     this.set(STORAGE_KEYS.ENTITIES_CONFIG, initialEntitiesConfig);
+    this.set(STORAGE_KEYS.ACTIVE_ENTITY_ID, 'pvt_ltd');
     this.set(STORAGE_KEYS.STOCK_ALLOCATIONS, initialStockAllocations);
     this.set(STORAGE_KEYS.SISTER_INVOICES, initialSisterDownstreamInvoices);
     this.set(STORAGE_KEYS.INTER_ENTITY_SETTLEMENTS, initialInterEntitySettlements);
+    this.set(STORAGE_KEYS.SALES_INVOICES, initialSalesInvoices);
+    this.set(STORAGE_KEYS.SALES_QUOTATIONS, initialSalesQuotations);
+    this.set(STORAGE_KEYS.PACKING_FLOOR_JOBS, initialPackingFloorJobs);
+    this.set(STORAGE_KEYS.VOIDED_INVOICES, initialVoidedInvoices);
     this.set(STORAGE_KEYS.ITEMS, initialItems);
     this.set(STORAGE_KEYS.LOTS, initialLots);
     this.set(STORAGE_KEYS.MOVEMENTS, initialMovements);
@@ -3525,6 +4226,10 @@ class StorageEngine {
         stockAllocations: this.getStockAllocations(),
         sisterInvoices: this.getSisterDownstreamInvoices(),
         interEntitySettlements: this.getInterEntitySettlements(),
+        salesInvoices: this.getSalesInvoices(),
+        salesQuotations: this.getSalesQuotations(),
+        packingFloorJobs: this.getPackingFloorJobs(),
+        voidedInvoices: this.getVoidedInvoicesAudit(),
         items: this.getItems(),
         lots: this.getLots(),
         movements: this.getMovements(),
@@ -3544,7 +4249,7 @@ class StorageEngine {
         interFirmTransfers: this.getInterFirmTransfers(),
         exportShipments: this.getExportShipments(),
         exportedAt: new Date().toISOString(),
-        version: '1.3.0',
+        version: '1.4.0',
       },
       null,
       2
@@ -3561,6 +4266,10 @@ class StorageEngine {
         if (data.stockAllocations) this.set(STORAGE_KEYS.STOCK_ALLOCATIONS, data.stockAllocations);
         if (data.sisterInvoices) this.set(STORAGE_KEYS.SISTER_INVOICES, data.sisterInvoices);
         if (data.interEntitySettlements) this.set(STORAGE_KEYS.INTER_ENTITY_SETTLEMENTS, data.interEntitySettlements);
+        if (data.salesInvoices) this.set(STORAGE_KEYS.SALES_INVOICES, data.salesInvoices);
+        if (data.salesQuotations) this.set(STORAGE_KEYS.SALES_QUOTATIONS, data.salesQuotations);
+        if (data.packingFloorJobs) this.set(STORAGE_KEYS.PACKING_FLOOR_JOBS, data.packingFloorJobs);
+        if (data.voidedInvoices) this.set(STORAGE_KEYS.VOIDED_INVOICES, data.voidedInvoices);
         if (data.items) this.set(STORAGE_KEYS.ITEMS, data.items);
         if (data.lots) this.set(STORAGE_KEYS.LOTS, data.lots);
         if (data.movements) this.set(STORAGE_KEYS.MOVEMENTS, data.movements);

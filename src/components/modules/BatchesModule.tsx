@@ -3,6 +3,7 @@ import {
   PackagePlus,
   Play,
   CheckCircle,
+  CheckCircle2,
   AlertTriangle,
   Scale,
   Sparkles,
@@ -17,9 +18,25 @@ import {
   BookOpen,
   Boxes,
   Layers,
+  Clock,
+  Truck,
+  ShieldCheck,
+  Factory,
+  BarChart2,
+  PackageCheck,
+  ArrowRight,
 } from 'lucide-react';
 import { db } from '../../lib/storage';
-import { PackingBatch, StockLot, InventoryItem, Recipe } from '../../types';
+import {
+  PackingBatch,
+  StockLot,
+  InventoryItem,
+  Recipe,
+  PackingFloorFulfillmentJob,
+  PrimaryPackTier,
+  SecondaryPackTier,
+  TertiaryShipperTier,
+} from '../../types';
 import { formatINR, formatGrams, formatQty, formatPct, formatDate } from '../../lib/format';
 
 export const BatchesModule: React.FC<{ onNavigateToFloor?: () => void }> = ({ onNavigateToFloor }) => {
@@ -29,8 +46,28 @@ export const BatchesModule: React.FC<{ onNavigateToFloor?: () => void }> = ({ on
   const [items, setItems] = useState<InventoryItem[]>(db.getItems());
   const [selectedBatch, setSelectedBatch] = useState<PackingBatch | null>(batches[0] || null);
 
-  // Active Tab: Batches vs Recipes (BOM)
-  const [activeTab, setActiveTab] = useState<'batches' | 'recipes'>('batches');
+  // Active Tab: Batches vs Recipes (BOM) vs 3-Tier Packaging & Floor Flow
+  const [activeTab, setActiveTab] = useState<'batches' | 'recipes' | 'packing_flow'>('batches');
+  const [floorJobs, setFloorJobs] = useState<PackingFloorFulfillmentJob[]>(() => db.getPackingFloorJobs());
+  const [showNewJobModal, setShowNewJobModal] = useState(false);
+  const [showLogProgressModal, setShowLogProgressModal] = useState(false);
+  const [selectedJobForProgress, setSelectedJobForProgress] = useState<PackingFloorFulfillmentJob | null>(null);
+
+  // New Job Wizard Form States
+  const [jobCustomerName, setJobCustomerName] = useState('Taj Vivanta & Gateway Palace Catering Division');
+  const [jobOrderRef, setJobOrderRef] = useState('PO-2026-OCT-102');
+  const [jobSpiceName, setJobSpiceName] = useState('Turmeric Powder (Pure Agmark Grade)');
+  const [jobTargetKg, setJobTargetKg] = useState(1000);
+  const [jobPrimaryTier, setJobPrimaryTier] = useState<PrimaryPackTier>('pouch_100g');
+  const [jobSecondaryTier, setJobSecondaryTier] = useState<SecondaryPackTier>('pack_10pcs');
+  const [jobTertiaryTier, setJobTertiaryTier] = useState<TertiaryShipperTier>('box_20kg');
+  const [jobDailyQuota, setJobDailyQuota] = useState(2500);
+
+  // Shift Log Form States
+  const [logShift, setLogShift] = useState<'morning' | 'evening' | 'night'>('morning');
+  const [logSupervisor, setLogSupervisor] = useState('Pravin Solanki');
+  const [logUnits, setLogUnits] = useState(2500);
+  const [logSpillWastageGrams, setLogSpillWastageGrams] = useState(1200);
 
   // Filter state
   const [statusFilter, setStatusFilter] = useState<'all' | 'running' | 'closed'>('all');
@@ -332,6 +369,92 @@ export const BatchesModule: React.FC<{ onNavigateToFloor?: () => void }> = ({ on
     }
   };
 
+  const handleCreateFloorJob = (e: React.FormEvent) => {
+    e.preventDefault();
+    const targetGrams = (Number(jobTargetKg) || 100) * 1000;
+    let packSizeGrams = 100;
+    if (jobPrimaryTier === 'pouch_10rs') packSizeGrams = 20;
+    else if (jobPrimaryTier === 'pouch_50g') packSizeGrams = 50;
+    else if (jobPrimaryTier === 'pouch_100g') packSizeGrams = 100;
+    else if (jobPrimaryTier === 'pouch_200g') packSizeGrams = 200;
+    else if (jobPrimaryTier === 'pouch_500g') packSizeGrams = 500;
+    else if (jobPrimaryTier === 'bag_1kg') packSizeGrams = 1000;
+    else if (jobPrimaryTier === 'bag_2kg') packSizeGrams = 2000;
+    else if (jobPrimaryTier === 'bag_5kg') packSizeGrams = 5000;
+    else if (jobPrimaryTier === 'bulk_10kg') packSizeGrams = 10000;
+    else if (jobPrimaryTier === 'bulk_25kg') packSizeGrams = 25000;
+    else if (jobPrimaryTier === 'bulk_50kg') packSizeGrams = 50000;
+
+    const targetPacks = Math.round(targetGrams / packSizeGrams);
+    const newJob: PackingFloorFulfillmentJob = {
+      id: `job_${Date.now()}`,
+      jobNo: `JOB-2026-10-${String(floorJobs.length + 1).padStart(3, '0')}`,
+      date: new Date().toISOString().split('T')[0],
+      customerName: jobCustomerName,
+      orderRef: jobOrderRef,
+      spiceName: jobSpiceName,
+      targetGrams,
+      targetPacks,
+      primaryTier: jobPrimaryTier,
+      secondaryTier: jobSecondaryTier,
+      tertiaryTier: jobTertiaryTier,
+      isMixedAssortedShipper: false,
+      dailyPackQuotaUnits: Number(jobDailyQuota) || 2500,
+      packedGramsCompleted: 0,
+      packedUnitsCompleted: 0,
+      deficitGrams: targetGrams,
+      deficitUnits: targetPacks,
+      fulfillmentPct: 0,
+      dailyProgressRecords: [],
+      status: 'grinding_ready',
+      lotTraceability: {
+        rawSpiceSupplierLot: lots[0]?.lotNo || 'LOT-HLD-2610A',
+        grindingBatchNo: batches[0]?.batchNo || 'BAT-2026-10-01',
+        primaryPackLotNo: `PL-${Date.now().toString().slice(-6)}`,
+        tertiaryShipperBoxBarcodes: [`BOX-${Date.now().toString().slice(-4)}-01`],
+      },
+    };
+
+    db.addPackingFloorJob(newJob);
+    setFloorJobs(db.getPackingFloorJobs());
+    setShowNewJobModal(false);
+  };
+
+  const handleLogShiftProgress = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedJobForProgress) return;
+
+    let packSizeGrams = 100;
+    if (selectedJobForProgress.primaryTier === 'pouch_10rs') packSizeGrams = 20;
+    else if (selectedJobForProgress.primaryTier === 'pouch_50g') packSizeGrams = 50;
+    else if (selectedJobForProgress.primaryTier === 'pouch_100g') packSizeGrams = 100;
+    else if (selectedJobForProgress.primaryTier === 'pouch_200g') packSizeGrams = 200;
+    else if (selectedJobForProgress.primaryTier === 'pouch_500g') packSizeGrams = 500;
+    else if (selectedJobForProgress.primaryTier === 'bag_1kg') packSizeGrams = 1000;
+    else if (selectedJobForProgress.primaryTier === 'bag_2kg') packSizeGrams = 2000;
+    else if (selectedJobForProgress.primaryTier === 'bag_5kg') packSizeGrams = 5000;
+    else if (selectedJobForProgress.primaryTier === 'bulk_10kg') packSizeGrams = 10000;
+    else if (selectedJobForProgress.primaryTier === 'bulk_25kg') packSizeGrams = 25000;
+    else if (selectedJobForProgress.primaryTier === 'bulk_50kg') packSizeGrams = 50000;
+
+    const units = Number(logUnits) || 0;
+    const grams = units * packSizeGrams;
+    const wastage = Number(logSpillWastageGrams) || 0;
+
+    db.recordPackingDailyProgress(
+      selectedJobForProgress.id,
+      logShift,
+      logSupervisor,
+      units,
+      grams,
+      wastage
+    );
+
+    setFloorJobs(db.getPackingFloorJobs());
+    setShowLogProgressModal(false);
+    setSelectedJobForProgress(null);
+  };
+
   const filteredBatches = batches.filter((b) => {
     if (statusFilter !== 'all' && b.status !== statusFilter) return false;
     if (
@@ -380,7 +503,7 @@ export const BatchesModule: React.FC<{ onNavigateToFloor?: () => void }> = ({ on
               <PackagePlus className="w-4 h-4" />
               <span>+ Create Batch Wizard</span>
             </button>
-          ) : (
+          ) : activeTab === 'recipes' ? (
             <button
               onClick={handleOpenCreateRecipe}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#9E1C23] hover:bg-[#83161C] text-white font-bold text-xs transition shadow-sm active:scale-95"
@@ -388,15 +511,23 @@ export const BatchesModule: React.FC<{ onNavigateToFloor?: () => void }> = ({ on
               <Plus className="w-4 h-4" />
               <span>+ New Recipe / BOM</span>
             </button>
+          ) : (
+            <button
+              onClick={() => setShowNewJobModal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#9E1C23] hover:bg-[#83161C] text-white font-bold text-xs transition shadow-sm active:scale-95"
+            >
+              <PackagePlus className="w-4 h-4" />
+              <span>+ Stage Customer Packing Job</span>
+            </button>
           )}
         </div>
       </div>
 
-      {/* Module Sub-tabs: Batches vs Recipes */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800 text-xs font-semibold">
+      {/* Module Sub-tabs: Batches vs Recipes vs 3-Tier Packaging & Floor Flow */}
+      <div className="flex border-b border-slate-200 dark:border-slate-800 text-xs font-semibold overflow-x-auto">
         <button
           onClick={() => setActiveTab('batches')}
-          className={`flex items-center gap-2 px-4 py-2.5 border-b-2 transition ${
+          className={`flex items-center gap-2 px-4 py-2.5 border-b-2 transition whitespace-nowrap ${
             activeTab === 'batches'
               ? 'border-[#9E1C23] text-[#9E1C23] dark:text-amber-400 dark:border-amber-400 font-bold'
               : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -407,7 +538,7 @@ export const BatchesModule: React.FC<{ onNavigateToFloor?: () => void }> = ({ on
         </button>
         <button
           onClick={() => setActiveTab('recipes')}
-          className={`flex items-center gap-2 px-4 py-2.5 border-b-2 transition ${
+          className={`flex items-center gap-2 px-4 py-2.5 border-b-2 transition whitespace-nowrap ${
             activeTab === 'recipes'
               ? 'border-[#9E1C23] text-[#9E1C23] dark:text-amber-400 dark:border-amber-400 font-bold'
               : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -415,6 +546,17 @@ export const BatchesModule: React.FC<{ onNavigateToFloor?: () => void }> = ({ on
         >
           <BookOpen className="w-4 h-4" />
           <span>Formulas &amp; Recipes (BOM) ({recipes.length})</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('packing_flow')}
+          className={`flex items-center gap-2 px-4 py-2.5 border-b-2 transition whitespace-nowrap ${
+            activeTab === 'packing_flow'
+              ? 'border-[#9E1C23] text-[#9E1C23] dark:text-amber-400 dark:border-amber-400 font-bold'
+              : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+          }`}
+        >
+          <PackageCheck className="w-4 h-4" />
+          <span>3-Tier Packaging &amp; Floor Flow ({floorJobs.length})</span>
         </button>
       </div>
 
@@ -811,6 +953,277 @@ export const BatchesModule: React.FC<{ onNavigateToFloor?: () => void }> = ({ on
               No recipes registered. Click "+ New Recipe / BOM" above to register your first formula.
             </div>
           )}
+        </div>
+      )}
+
+      {/* TAB 3: 3-TIER PACKAGING & FLOOR FLOW TRACKER */}
+      {activeTab === 'packing_flow' && (
+        <div className="space-y-4">
+          {/* Packaging Hierarchy Architecture Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            {/* Tier 1 Card */}
+            <div className="p-4 rounded-xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
+              <div className="flex items-center gap-2 text-rose-700 dark:text-rose-400 font-bold">
+                <Boxes className="w-4 h-4" />
+                <span>Tier 1: Primary Packaging (Filling)</span>
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 text-[11px]">
+                Direct powder fill into food-grade barrier pouches or bulk industrial bags.
+              </p>
+              <div className="space-y-1 pt-1 font-mono text-[11px]">
+                <div className="flex justify-between border-b pb-1 border-slate-100 dark:border-slate-800">
+                  <span>₹10 Sachet Pouch</span>
+                  <span className="font-bold text-slate-900 dark:text-white">18g – 25g net</span>
+                </div>
+                <div className="flex justify-between border-b pb-1 border-slate-100 dark:border-slate-800">
+                  <span>Consumer Pouches</span>
+                  <span className="font-bold text-slate-900 dark:text-white">50g, 100g, 200g, 500g</span>
+                </div>
+                <div className="flex justify-between border-b pb-1 border-slate-100 dark:border-slate-800">
+                  <span>Medium Consumer Packs</span>
+                  <span className="font-bold text-slate-900 dark:text-white">1kg, 2kg, 5kg bags</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Industrial Bulk PP</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">10kg, 25kg, 50kg (loose)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Tier 2 Card */}
+            <div className="p-4 rounded-xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
+              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-bold">
+                <Layers className="w-4 h-4" />
+                <span>Tier 2: Secondary Bundling (Over-Wrap)</span>
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 text-[11px]">
+                Intermediate bundling, striping, and outer film sealing for trade distribution.
+              </p>
+              <div className="space-y-1 pt-1 font-mono text-[11px]">
+                <div className="flex justify-between border-b pb-1 border-slate-100 dark:border-slate-800">
+                  <span>₹10 Pouch Bundle</span>
+                  <span className="font-bold text-amber-700 dark:text-amber-300">3 strips × 10 pcs (30 pcs)</span>
+                </div>
+                <div className="flex justify-between border-b pb-1 border-slate-100 dark:border-slate-800">
+                  <span>100g Pouch Bundle</span>
+                  <span className="font-bold text-slate-900 dark:text-white">10 pcs pack (1 kg net)</span>
+                </div>
+                <div className="flex justify-between border-b pb-1 border-slate-100 dark:border-slate-800">
+                  <span>200g Pouch Bundle</span>
+                  <span className="font-bold text-slate-900 dark:text-white">5 pcs pack (1 kg net)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>500g Pouch Bundle</span>
+                  <span className="font-bold text-slate-900 dark:text-white">2 pcs pack (1 kg net)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Tier 3 Card */}
+            <div className="p-4 rounded-xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
+              <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400 font-bold">
+                <Truck className="w-4 h-4" />
+                <span>Tier 3: Tertiary Shipper Packaging</span>
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 text-[11px]">
+                Outer shippers (15kg – 50kg) for logistics, rail/road transit &amp; container export.
+              </p>
+              <div className="space-y-1 pt-1 font-mono text-[11px]">
+                <div className="flex justify-between border-b pb-1 border-slate-100 dark:border-slate-800">
+                  <span>Woven PP Bags</span>
+                  <span className="font-bold text-blue-700 dark:text-blue-300">15kg, 25kg, 50kg</span>
+                </div>
+                <div className="flex justify-between border-b pb-1 border-slate-100 dark:border-slate-800">
+                  <span>Food-Grade Jute Bags</span>
+                  <span className="font-bold text-slate-900 dark:text-white">25kg export sacks</span>
+                </div>
+                <div className="flex justify-between border-b pb-1 border-slate-100 dark:border-slate-800">
+                  <span>5-Ply Corrugated Boxes</span>
+                  <span className="font-bold text-slate-900 dark:text-white">20kg, 25kg master cartons</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Mixed / Assorted Shipper</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">Institutional Multi-SKU Box</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Active Order Fulfillment Jobs List */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <Factory className="w-4 h-4 text-[#9E1C23] dark:text-amber-400" />
+                <span>Active Customer Fulfillment Pipeline &amp; Floor Jobs</span>
+              </h3>
+              <span className="text-xs text-slate-500 font-medium">{floorJobs.length} Active Orders Staged</span>
+            </div>
+
+            {floorJobs.map((job) => (
+              <div
+                key={job.id}
+                className="rounded-2xl border p-4 sm:p-5 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm space-y-4"
+              >
+                {/* Top Row: Job Meta & Stage Status */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3 border-slate-100 dark:border-slate-800">
+                  <div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="font-mono font-bold text-[#9E1C23] dark:text-amber-400">{job.jobNo}</span>
+                      <span className="text-slate-400">·</span>
+                      <span className="font-semibold text-slate-900 dark:text-white">{job.customerName}</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] bg-slate-100 dark:bg-slate-800 font-mono text-slate-600 dark:text-slate-400">
+                        {job.orderRef}
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                      Target Product: <strong>{job.spiceName}</strong> (Total Target: {job.targetGrams / 1000} kg / {job.targetPacks.toLocaleString()} units)
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border ${
+                        job.status === 'tertiary_boxed' || job.status === 'staged_for_dispatch'
+                          ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+                          : job.status === 'secondary_bundling'
+                          ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30'
+                          : 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30'
+                      }`}
+                    >
+                      {job.status === 'grinding_ready'
+                        ? '1. Powder Grinding Ready'
+                        : job.status === 'primary_packing'
+                        ? '2. Primary Packing'
+                        : job.status === 'secondary_bundling'
+                        ? '3. Secondary Bundling'
+                        : '4. Shipper Boxed (Dispatch Ready)'}
+                    </span>
+
+                    <button
+                      onClick={() => {
+                        setSelectedJobForProgress(job);
+                        setShowLogProgressModal(true);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-[#9E1C23] hover:bg-[#83161C] text-white font-bold text-xs transition shadow-sm active:scale-95"
+                    >
+                      + Log Shift Output
+                    </button>
+                  </div>
+                </div>
+
+                {/* Packaging Tier Badges Strip */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Primary Pack Format</span>
+                    <span className="font-semibold text-slate-900 dark:text-white capitalize">
+                      {job.primaryTier.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Secondary Bundling</span>
+                    <span className="font-semibold text-slate-900 dark:text-white capitalize">
+                      {job.secondaryTier.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Tertiary Outer Shipper</span>
+                    <span className="font-semibold text-slate-900 dark:text-white capitalize">
+                      {job.tertiaryTier.replace('_', ' ')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress Bar & Fulfillment Deficit Tracking */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      Fulfillment Progress: {job.packedUnitsCompleted.toLocaleString()} / {job.targetPacks.toLocaleString()} units completed ({job.fulfillmentPct}%)
+                    </span>
+                    <span className="font-bold text-rose-600 dark:text-rose-400 font-mono">
+                      Remaining Deficit: {job.deficitUnits.toLocaleString()} units ({job.deficitGrams / 1000} kg)
+                    </span>
+                  </div>
+
+                  <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
+                    <div
+                      style={{ width: `${job.fulfillmentPct}%` }}
+                      className="bg-[#9E1C23] h-full transition-all duration-300 rounded-full"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
+                    <span>Daily Quota Target: {job.dailyPackQuotaUnits.toLocaleString()} units/shift</span>
+                    <span>
+                      Est. Completion:{' '}
+                      {job.deficitUnits > 0
+                        ? `${Math.ceil(job.deficitUnits / job.dailyPackQuotaUnits)} more shift(s)`
+                        : 'Fulfilled'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Backward & Forward Lot Traceability Chain */}
+                <div className="p-3 rounded-xl bg-slate-50/70 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 space-y-1 text-xs">
+                  <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 font-semibold text-[11px] uppercase">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>Complete Backward &amp; Forward Lot Traceability Chain</span>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px] font-mono pt-1">
+                    <div>
+                      <span className="text-slate-400 block text-[9.5px]">Supplier Spice Lot:</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
+                        {job.lotTraceability.rawSpiceSupplierLot}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[9.5px]">Grinding Batch #:</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200">
+                        {job.lotTraceability.grindingBatchNo}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[9.5px]">Primary Pack Lot:</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200">
+                        {job.lotTraceability.primaryPackLotNo}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[9.5px]">Shipper Box Barcodes:</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400 truncate block">
+                        {job.lotTraceability.tertiaryShipperBoxBarcodes.join(', ')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Shift Progress History (if any) */}
+                {job.dailyProgressRecords.length > 0 && (
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+                      Shift Production Output Log:
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      {job.dailyProgressRecords.map((prog, idx) => (
+                        <div
+                          key={idx}
+                          className="p-2 rounded-lg border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-[11px]"
+                        >
+                          <div className="flex items-center justify-between font-semibold">
+                            <span>{prog.date} ({prog.shift})</span>
+                            <span className="text-emerald-600 font-mono font-bold">+{prog.packedUnits} units</span>
+                          </div>
+                          <div className="text-[10px] text-slate-500 mt-0.5 flex justify-between">
+                            <span>Sup: {prog.supervisor}</span>
+                            <span>Spill: {(prog.spillWastageGrams / 1000).toFixed(2)}kg</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -1283,6 +1696,312 @@ export const BatchesModule: React.FC<{ onNavigateToFloor?: () => void }> = ({ on
                   className="px-5 py-2 rounded-lg bg-[#9E1C23] hover:bg-[#83161C] text-white font-bold shadow-sm"
                 >
                   {editingRecipe ? 'Update Recipe Formula' : 'Save Recipe BOM'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* MODAL 4: STAGE CUSTOMER PACKING JOB WIZARD */}
+      {showNewJobModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl p-4 sm:p-6 space-y-4 my-8 text-slate-900 dark:text-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-[#9E1C23]/10 text-[#9E1C23] dark:text-amber-400">
+                  <PackageCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
+                    Stage Customer Packing Job
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    3-Tier Packaging Hierarchy &amp; Fulfillment Quota Calibration
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowNewJobModal(false)}
+                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateFloorJob} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Customer / Institutional Buyer Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={jobCustomerName}
+                  onChange={(e) => setJobCustomerName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Customer PO / Order Ref *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={jobOrderRef}
+                    onChange={(e) => setJobOrderRef(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Order Target Volume (kg) *
+                  </label>
+                  <input
+                    type="number"
+                    min="10"
+                    step="10"
+                    required
+                    value={jobTargetKg}
+                    onChange={(e) => setJobTargetKg(Number(e.target.value) || 0)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Spice Powder Product Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={jobSpiceName}
+                  onChange={(e) => setJobSpiceName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium"
+                />
+              </div>
+
+              {/* 3-Tier Packaging Selections */}
+              <div className="p-3 rounded-xl border bg-slate-50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 space-y-2.5">
+                <span className="font-bold text-[11px] text-[#9E1C23] dark:text-amber-400 block uppercase">
+                  3-Tier Packaging Architecture Specifications
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Tier 1: Primary Filling *
+                    </label>
+                    <select
+                      value={jobPrimaryTier}
+                      onChange={(e) => setJobPrimaryTier(e.target.value as PrimaryPackTier)}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs"
+                    >
+                      <option value="pouch_10rs">₹10 Pouch (18g-25g)</option>
+                      <option value="pouch_50g">50g Consumer Pouch</option>
+                      <option value="pouch_100g">100g Consumer Pouch</option>
+                      <option value="pouch_200g">200g Consumer Pouch</option>
+                      <option value="pouch_500g">500g Consumer Pouch</option>
+                      <option value="bag_1kg">1 kg Consumer Bag</option>
+                      <option value="bag_2kg">2 kg Consumer Bag</option>
+                      <option value="bag_5kg">5 kg Consumer Bag</option>
+                      <option value="bulk_10kg">10 kg Bulk PP Bag</option>
+                      <option value="bulk_25kg">25 kg Bulk PP Bag</option>
+                      <option value="bulk_50kg">50 kg Bulk PP Bag</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Tier 2: Bundling *
+                    </label>
+                    <select
+                      value={jobSecondaryTier}
+                      onChange={(e) => setJobSecondaryTier(e.target.value as SecondaryPackTier)}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs"
+                    >
+                      <option value="strip_10pcs">10 pcs Strip</option>
+                      <option value="bundle_30pcs">3 Strips × 10 (30 pcs)</option>
+                      <option value="pack_10pcs">10 pcs Pack (100g to 1kg)</option>
+                      <option value="pack_5pcs">5 pcs Pack (200g to 1kg)</option>
+                      <option value="pack_2pcs">2 pcs Pack (500g to 1kg)</option>
+                      <option value="none_direct">None / Direct Shipper</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Tier 3: Outer Shipper *
+                    </label>
+                    <select
+                      value={jobTertiaryTier}
+                      onChange={(e) => setJobTertiaryTier(e.target.value as TertiaryShipperTier)}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs"
+                    >
+                      <option value="box_20kg">20 kg Master Box (5-Ply)</option>
+                      <option value="box_25kg">25 kg Master Box (5-Ply)</option>
+                      <option value="box_custom">Custom Assorted Box</option>
+                      <option value="pp_bag_15kg">15 kg Woven PP Bag</option>
+                      <option value="pp_bag_25kg">25 kg Woven PP Bag</option>
+                      <option value="pp_bag_50kg">50 kg Heavy PP Bag</option>
+                      <option value="jute_bag_25kg">25 kg Food-Grade Jute</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Daily Floor Packing Quota (Units / Shift) *
+                </label>
+                <input
+                  type="number"
+                  min="100"
+                  step="100"
+                  required
+                  value={jobDailyQuota}
+                  onChange={(e) => setJobDailyQuota(Number(e.target.value) || 2500)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowNewJobModal(false)}
+                  className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-lg bg-[#9E1C23] hover:bg-[#83161C] text-white font-bold shadow-sm"
+                >
+                  Stage Fulfillment Job
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 5: LOG SHIFT PROGRESS */}
+      {showLogProgressModal && selectedJobForProgress && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md shadow-2xl p-4 sm:p-6 space-y-4 my-8 text-slate-900 dark:text-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div>
+                <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
+                  Log Shift Production Output
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  {selectedJobForProgress.jobNo} · {selectedJobForProgress.customerName}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowLogProgressModal(false);
+                  setSelectedJobForProgress(null);
+                }}
+                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleLogShiftProgress} className="space-y-3.5 text-xs">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 space-y-1 font-mono text-[11px]">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Target Volume:</span>
+                  <span className="font-bold">{selectedJobForProgress.targetPacks.toLocaleString()} units ({selectedJobForProgress.targetGrams / 1000} kg)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Completed So Far:</span>
+                  <span className="font-bold text-emerald-600">{selectedJobForProgress.packedUnitsCompleted.toLocaleString()} units</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Remaining Deficit:</span>
+                  <span className="font-bold text-rose-600">{selectedJobForProgress.deficitUnits.toLocaleString()} units</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Operating Shift *
+                  </label>
+                  <select
+                    value={logShift}
+                    onChange={(e) => setLogShift(e.target.value as 'morning' | 'evening' | 'night')}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                  >
+                    <option value="morning">Morning (08:00 - 16:30)</option>
+                    <option value="evening">Evening (16:30 - 01:00)</option>
+                    <option value="night">Night (01:00 - 08:00)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Floor Supervisor *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={logSupervisor}
+                    onChange={(e) => setLogSupervisor(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Units Packed this Shift *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={logUnits}
+                    onChange={(e) => setLogUnits(Number(e.target.value) || 0)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono text-sm font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Spill / Wastage (Grams)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="50"
+                    value={logSpillWastageGrams}
+                    onChange={(e) => setLogSpillWastageGrams(Number(e.target.value) || 0)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowLogProgressModal(false);
+                    setSelectedJobForProgress(null);
+                  }}
+                  className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-lg bg-[#9E1C23] hover:bg-[#83161C] text-white font-bold shadow-sm"
+                >
+                  Confirm &amp; Update Fulfillment
                 </button>
               </div>
             </form>

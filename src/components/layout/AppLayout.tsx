@@ -19,6 +19,7 @@ import {
   Sun,
   Moon,
   FileText,
+  FileSpreadsheet,
   Truck,
   LogOut,
   Download,
@@ -77,6 +78,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   // Master List of Modules
   const allNavItems = [
     { id: 'dashboard', label: 'Where Is My Money', icon: LayoutDashboard },
+    { id: 'invoices', label: 'Invoices & Quotations', icon: FileSpreadsheet },
     { id: 'batches', label: 'Packing Batches', icon: Package },
     { id: 'inventory', label: 'Stock & Lots', icon: Boxes },
     { id: 'pos', label: 'Purchase Orders (POs)', icon: FileText },

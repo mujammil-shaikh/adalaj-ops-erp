@@ -422,6 +422,7 @@ export const ROLE_PERMISSIONS: Record<
     description: 'Full administrative access across all plant, operational, and financial modules',
     allowedModules: [
       'dashboard',
+      'invoices',
       'batches',
       'inventory',
       'pos',
@@ -439,9 +440,10 @@ export const ROLE_PERMISSIONS: Record<
   },
   accountant: {
     name: 'Chief Accountant & Finance',
-    description: 'Access to Expenses, Bills, POs, GST ITC, Part-payments, Payroll, Debt, Licences, and Tally Export',
+    description: 'Access to Expenses, Bills, Invoices, POs, GST ITC, Part-payments, Payroll, Debt, Licences, and Tally Export',
     allowedModules: [
       'dashboard',
+      'invoices',
       'pos',
       'expenses',
       'interfirm_export',
@@ -479,9 +481,10 @@ export const ROLE_PERMISSIONS: Record<
   },
   salesman: {
     name: 'Sales & Dispatch Manager',
-    description: 'Finished goods dispatch, CFA Depot transfers, Export shipments, Ads and E-commerce',
+    description: 'Customer Invoices, Quotations, Finished goods dispatch, CFA Depot transfers, Export shipments, Ads and E-commerce',
     allowedModules: [
       'dashboard',
+      'invoices',
       'interfirm_export',
       'advertising',
       'inventory',
@@ -491,9 +494,10 @@ export const ROLE_PERMISSIONS: Record<
   },
   ca_auditor: {
     name: 'Statutory CA / Auditor (Read-Only)',
-    description: 'Read-only audit view for books, GST claimable vs blocked ITC, tax ledgers, and compliance',
+    description: 'Read-only audit view for books, Invoices, GST claimable vs blocked ITC, tax ledgers, and compliance',
     allowedModules: [
       'dashboard',
+      'invoices',
       'pos',
       'expenses',
       'interfirm_export',
@@ -927,3 +931,245 @@ export interface InterEntityLedgerReconciliation {
   }[];
 }
 
+// ============================================================================
+// 3-TIER PACKAGING HIERARCHY & SHOP FLOOR FULFILLMENT TYPES
+// ============================================================================
+export type PrimaryPackTier =
+  | 'pouch_10rs'   // ₹10 pouch (18g-25g flexible printed pouch)
+  | 'pouch_50g'    // 50g consumer pouch / PP bag
+  | 'pouch_100g'   // 100g consumer pouch
+  | 'pouch_200g'   // 200g consumer pouch
+  | 'pouch_500g'   // 500g consumer pouch
+  | 'bag_1kg'      // 1 kg consumer pack
+  | 'bag_2kg'      // 2 kg consumer pack
+  | 'bag_5kg'      // 5 kg consumer pack
+  | 'bulk_10kg'    // 10 kg bulk industrial PP bag (direct loose)
+  | 'bulk_25kg'    // 25 kg bulk industrial PP bag (direct loose)
+  | 'bulk_50kg';   // 50 kg bulk industrial PP bag (direct loose)
+
+export type SecondaryPackTier =
+  | 'strip_10pcs'   // 10 pcs hanging strip
+  | 'bundle_30pcs'  // 3 strips x 10 pcs = 30 pcs over-wrap bundle
+  | 'pack_10pcs'    // 10 pcs outer pack (for 100g -> 1kg bundle)
+  | 'pack_5pcs'     // 5 pcs outer pack (for 200g -> 1kg bundle)
+  | 'pack_2pcs'     // 2 pcs outer pack (for 500g -> 1kg bundle)
+  | 'none_direct';  // Direct to tertiary (1kg, 2kg, 5kg, bulk bags)
+
+export type TertiaryShipperTier =
+  | 'pp_bag_15kg'    // 15 kg woven PP bag shipper
+  | 'pp_bag_25kg'    // 25 kg woven PP bag shipper
+  | 'pp_bag_50kg'    // 50 kg heavy-duty woven PP bag shipper
+  | 'jute_bag_25kg'  // 25 kg food-grade jute bag
+  | 'box_20kg'       // 20 kg 5-ply corrugated shipper box
+  | 'box_25kg'       // 25 kg 5-ply corrugated shipper box
+  | 'box_custom';    // Custom institutional / mixed assorted shipper box
+
+export interface PackingFloorFulfillmentJob {
+  id: string;
+  jobNo: string;
+  date: string;
+  customerName: string;
+  orderRef: string;
+  spiceName: string;
+  targetGrams: number;
+  targetPacks: number;
+  primaryTier: PrimaryPackTier;
+  secondaryTier: SecondaryPackTier;
+  tertiaryTier: TertiaryShipperTier;
+  isMixedAssortedShipper: boolean;
+  mixedContentsDesc?: string;
+  dailyPackQuotaUnits: number;
+  packedGramsCompleted: number;
+  packedUnitsCompleted: number;
+  deficitGrams: number;
+  deficitUnits: number;
+  fulfillmentPct: number;
+  dailyProgressRecords: {
+    date: string;
+    shift: 'morning' | 'evening' | 'night';
+    supervisor: string;
+    packedUnits: number;
+    packedGrams: number;
+    spillWastageGrams: number;
+  }[];
+  status: 'grinding_ready' | 'primary_packing' | 'secondary_bundling' | 'tertiary_boxed' | 'staged_for_dispatch';
+  lotTraceability: {
+    rawSpiceSupplierLot: string;
+    grindingBatchNo: string;
+    primaryPackLotNo: string;
+    tertiaryShipperBoxBarcodes: string[];
+    dispatchInvoiceRef?: string;
+  };
+}
+
+// ============================================================================
+// DYNAMIC SALES INVOICE & QUOTATION ENGINE TYPES
+// ============================================================================
+export type SalesDocumentType =
+  | 'domestic_tax_invoice'
+  | 'export_commercial'
+  | 'formal_quotation'
+  | 'proforma_invoice';
+
+export type PaymentCreditTerm =
+  | 'advance'          // 100% advance before production
+  | 'on_dispatch'      // Payment on vehicle loading / dispatch (standard)
+  | 'credit_30'        // 30 days credit (+2% surcharge)
+  | 'credit_60'        // 60 days credit (+2% surcharge)
+  | 'credit_extended'  // >180 days extended credit (+2% surcharge + commercial finance charge)
+  | 'sister_revolving'; // Sister firm continuous unblocked revolving credit (exempt from surcharges)
+
+export interface SalesInvoiceItem {
+  id: string;
+  sku: string;
+  name: string;
+  description: string;
+  hsnCode: string; // 0910, 0904, 0909, 2103
+  packSizeGrams: number;
+  quantityUnits: number;
+  unitType: 'pouches' | 'strips' | 'bundles' | 'boxes' | 'kg';
+  ratePerUnitPaise: number;
+  taxableAmountPaise: number;
+  gstRatePct: number; // 5% for spices, 12% for blended mix, 0% for LUT export
+  cgstPaise: number;
+  sgstPaise: number;
+  igstPaise: number;
+  totalPaise: number;
+}
+
+export interface SalesInvoice {
+  id: string;
+  invoiceNo: string; // e.g. ADL-INV-2026-0001 or ADL-EXP-2026-0001
+  invoiceType: SalesDocumentType;
+  entityId: BusinessEntityId;
+  date: string;
+  dueDate: string;
+  buyerPartyId?: string;
+  buyerName: string;
+  buyerGstin?: string;
+  buyerPan?: string;
+  buyerAddress: string;
+  buyerState: string;
+  buyerStateCode: string; // 24 = Gujarat (Intra-state CGST+SGST), Others = Inter-state (IGST)
+  buyerCountry: string;
+  items: SalesInvoiceItem[];
+  subtotalTaxablePaise: number;
+  creditTerms: PaymentCreditTerm;
+  creditDays: number;
+  creditSurchargeRatePct: number; // 2.0% for credit scenarios (0 for sister / advance)
+  creditSurchargePaise: number;
+  extendedCreditInterestPaise: number; // For >6 months credit
+  totalTaxablePaise: number; // subtotal + credit surcharge
+  cgstPaise: number;
+  sgstPaise: number;
+  igstPaise: number;
+  totalTaxPaise: number;
+  roundOffPaise: number;
+  grandTotalPaise: number;
+  paidAmountPaise: number;
+  balanceDuePaise: number;
+  status: 'draft' | 'issued' | 'part_paid' | 'paid' | 'voided';
+  voidReason?: string;
+  voidedAt?: string;
+  eWayBillNo?: string;
+  irn?: string;
+  qrCodeString?: string;
+  // Global Export fields (200 Countries compliance)
+  isExport: boolean;
+  currency: 'INR' | 'USD' | 'EUR' | 'AED' | 'GBP' | 'SAR';
+  exchangeRate: number;
+  foreignAmount: number;
+  incoterms?: 'FOB' | 'CIF' | 'CFR' | 'EXW';
+  portOfLoading?: string; // INMUN1 Mundra Port
+  portOfDischarge?: string;
+  destinationCountry?: string;
+  iecNo?: string; // 2418002931
+  lutArn?: string; // AD240426001928K (Rule 96A zero tax)
+  cresNo?: string; // Spices Board Registration
+  swiftBic?: string;
+  adCode?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface SalesQuotation {
+  id: string;
+  quotationNo: string; // e.g. ADL-QUO-2026-0001
+  date: string;
+  validUntilDate: string;
+  entityId: BusinessEntityId;
+  buyerName: string;
+  buyerGstin?: string;
+  buyerAddress: string;
+  buyerCountry: string;
+  items: SalesInvoiceItem[];
+  subtotalTaxablePaise: number;
+  creditTerms: PaymentCreditTerm;
+  creditSurchargeRatePct: number;
+  creditSurchargePaise: number;
+  estimatedTaxPaise: number;
+  grandTotalPaise: number;
+  termsAndConditions: string[];
+  status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'converted';
+  convertedInvoiceId?: string;
+  createdAt: string;
+}
+
+export interface VoidedInvoiceAudit {
+  id: string;
+  originalInvoiceNo: string;
+  invoiceType: SalesDocumentType;
+  voidedAt: string;
+  voidedBy: string;
+  reason: string;
+  originalGrandTotalPaise: number;
+  originalDataJson: string;
+}
+
+// ============================================================================
+// FINANCIAL INTELLIGENCE & MULTI-PERIOD EXECUTIVE REPORT TYPES
+// ============================================================================
+export type FinancialHorizon = 'daily_dod' | 'monthly_mom' | 'specific_month' | 'annual_yoy';
+
+export interface FinancialIntelligenceMetrics {
+  periodLabel: string;
+  horizon: FinancialHorizon;
+  entityScope: BusinessEntityId | 'all';
+  // P&L Absolute Amounts (Paise)
+  revenuePaise: number;
+  cogsPaise: number;
+  grossProfitPaise: number;
+  opexPaise: number;
+  ebitdaPaise: number;
+  depreciationPaise: number;
+  ebitPaise: number;
+  financeCostPaise: number;
+  pbtPaise: number;
+  taxProvisionPaise: number;
+  patPaise: number;
+  // Margins in %
+  cogsPct: number;
+  gpMarginPct: number;
+  opexPct: number;
+  ebitdaMarginPct: number;
+  ebitMarginPct: number;
+  pbtMarginPct: number;
+  patMarginPct: number;
+  // Statutory GST Compliance
+  eligibleItcPaise: number;
+  outputGstLiabilityPaise: number;
+  netGstPositionPaise: number; // positive = net payable, negative = surplus credit carried forward
+  // Factory Floor Per KG Unit Economics
+  totalKilogramsPacked: number;
+  opexPerKgPaise: number;
+  cogsPerKgPaise: number;
+  totalCostPerKgPaise: number;
+  realizationPerKgPaise: number;
+  markupPerKgPaise: number;
+  markupPct: number;
+  // Variance vs Previous Period (DoD / MoM / YoY)
+  previousRevenuePaise: number;
+  revenueGrowthPct: number;
+  gpGrowthPct: number;
+  patGrowthPct: number;
+}

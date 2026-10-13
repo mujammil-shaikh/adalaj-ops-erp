@@ -8,6 +8,7 @@ import {
   Wrench,
   FileText,
   TrendingDown,
+  TrendingUp,
   PlusCircle,
   PackagePlus,
   QrCode,
@@ -17,10 +18,17 @@ import {
   Building2,
   Truck,
   Scale,
+  BarChart3,
+  Percent,
+  Sparkles,
+  Activity,
+  Layers,
+  CheckCircle2,
+  DollarSign,
 } from 'lucide-react';
 import { db } from '../../lib/storage';
 import { formatINR, formatGrams } from '../../lib/format';
-import { BusinessEntityId } from '../../types';
+import { BusinessEntityId, FinancialHorizon } from '../../types';
 
 interface DashboardProps {
   onNavigate: (module: string) => void;
@@ -32,6 +40,9 @@ export const DashboardWhereIsMyMoney: React.FC<DashboardProps> = ({
   onOpenQuickAdd,
 }) => {
   const [activeEntity, setActiveEntity] = useState<BusinessEntityId | 'all'>(() => db.getActiveEntityId());
+  const [financialHorizon, setFinancialHorizon] = useState<FinancialHorizon>('monthly_mom');
+  const [specificMonth, setSpecificMonth] = useState<'2026-10' | '2026-09' | '2026-08'>('2026-10');
+  const [showDetailedPnl, setShowDetailedPnl] = useState(true);
 
   useEffect(() => {
     const handler = () => {
@@ -115,6 +126,8 @@ export const DashboardWhereIsMyMoney: React.FC<DashboardProps> = ({
   const netLiquidPaise =
     totalCashAndBankPaise + totalStockValuePaise + totalReceivablesPaise - totalPayablesPaise - totalDebtBalancePaise;
 
+  const finMetrics = db.getFinancialIntelligence(activeEntity, financialHorizon, specificMonth);
+
   return (
     <div key={activeEntity} className="space-y-4">
       {/* Top Banner: Adalaj Themed Cockpit */}
@@ -141,6 +154,13 @@ export const DashboardWhereIsMyMoney: React.FC<DashboardProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => onNavigate('invoices')}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow-md active:scale-95"
+            >
+              <FileText className="w-4 h-4 text-slate-950" />
+              <span>Invoices &amp; Quotes</span>
+            </button>
             <button
               onClick={() => onNavigate('batches')}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs transition shadow-md active:scale-95"
@@ -266,6 +286,286 @@ export const DashboardWhereIsMyMoney: React.FC<DashboardProps> = ({
           </button>
         </div>
       )}
+
+      {/* ===================================================================== */}
+      {/* EXECUTIVE FINANCIAL INTELLIGENCE & MULTI-PERIOD P&L COCKPIT          */}
+      {/* ===================================================================== */}
+      <div className="rounded-2xl border p-4 sm:p-5 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+        {/* Header with Multi-Horizon Interactive Slicers */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b pb-3 border-slate-200 dark:border-slate-800">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#9E1C23] dark:text-amber-400">
+              <BarChart3 className="w-4 h-4" />
+              <span>Financial Intelligence &amp; Multi-KPI Engine</span>
+              <span>·</span>
+              <span className="text-slate-500 dark:text-slate-400 font-medium">{finMetrics.periodLabel}</span>
+            </div>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-0.5">
+              P&amp;L Waterfall, EBITDA, Margins &amp; Unit Economics
+            </h2>
+          </div>
+
+          {/* Horizon Slicer Tabs */}
+          <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl text-xs font-semibold">
+            <button
+              onClick={() => setFinancialHorizon('daily_dod')}
+              className={`px-3 py-1.5 rounded-lg transition ${
+                financialHorizon === 'daily_dod'
+                  ? 'bg-white dark:bg-slate-900 text-[#9E1C23] dark:text-amber-400 shadow-sm font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Daily (DoD)
+            </button>
+            <button
+              onClick={() => setFinancialHorizon('monthly_mom')}
+              className={`px-3 py-1.5 rounded-lg transition ${
+                financialHorizon === 'monthly_mom'
+                  ? 'bg-white dark:bg-slate-900 text-[#9E1C23] dark:text-amber-400 shadow-sm font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Monthly (MoM)
+            </button>
+            <button
+              onClick={() => setFinancialHorizon('specific_month')}
+              className={`px-3 py-1.5 rounded-lg transition ${
+                financialHorizon === 'specific_month'
+                  ? 'bg-white dark:bg-slate-900 text-[#9E1C23] dark:text-amber-400 shadow-sm font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Oct 2026
+            </button>
+            <button
+              onClick={() => setFinancialHorizon('annual_yoy')}
+              className={`px-3 py-1.5 rounded-lg transition ${
+                financialHorizon === 'annual_yoy'
+                  ? 'bg-white dark:bg-slate-900 text-[#9E1C23] dark:text-amber-400 shadow-sm font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Annual (YoY)
+            </button>
+          </div>
+        </div>
+
+        {/* 8 Primary P&L Hierarchy Cards (in ₹ and %) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 text-xs">
+          {/* 1. Revenue */}
+          <div className="p-3 rounded-xl border bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800">
+            <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block truncate">
+              Turnover (Rev)
+            </span>
+            <div className="text-sm sm:text-base font-bold font-mono text-slate-900 dark:text-white mt-0.5">
+              {formatINR(finMetrics.revenuePaise)}
+            </div>
+            <div className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
+              <TrendingUp className="w-3 h-3" />
+              <span>+{finMetrics.revenueGrowthPct}%</span>
+            </div>
+          </div>
+
+          {/* 2. COGS */}
+          <div className="p-3 rounded-xl border bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800">
+            <span className="text-[10px] uppercase font-bold text-rose-600 dark:text-rose-400 block truncate">
+              COGS (Direct)
+            </span>
+            <div className="text-sm sm:text-base font-bold font-mono text-slate-900 dark:text-white mt-0.5">
+              {formatINR(finMetrics.cogsPaise)}
+            </div>
+            <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-1">
+              {finMetrics.cogsPct}% of rev
+            </div>
+          </div>
+
+          {/* 3. Gross Profit (GP) */}
+          <div className="p-3 rounded-xl border bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-500/20">
+            <span className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400 block truncate">
+              Gross Profit (GP)
+            </span>
+            <div className="text-sm sm:text-base font-bold font-mono text-emerald-700 dark:text-emerald-300 mt-0.5">
+              {formatINR(finMetrics.grossProfitPaise)}
+            </div>
+            <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+              {finMetrics.gpMarginPct}% Margin
+            </div>
+          </div>
+
+          {/* 4. OPEX */}
+          <div className="p-3 rounded-xl border bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800">
+            <span className="text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400 block truncate">
+              OPEX (Indirect)
+            </span>
+            <div className="text-sm sm:text-base font-bold font-mono text-slate-900 dark:text-white mt-0.5">
+              {formatINR(finMetrics.opexPaise)}
+            </div>
+            <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-1">
+              {finMetrics.opexPct}% of rev
+            </div>
+          </div>
+
+          {/* 5. EBITDA */}
+          <div className="p-3 rounded-xl border bg-amber-50/50 dark:bg-amber-950/20 border-amber-500/20">
+            <span className="text-[10px] uppercase font-bold text-amber-700 dark:text-amber-300 block truncate">
+              EBITDA
+            </span>
+            <div className="text-sm sm:text-base font-bold font-mono text-amber-700 dark:text-amber-300 mt-0.5">
+              {formatINR(finMetrics.ebitdaPaise)}
+            </div>
+            <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400 mt-1">
+              {finMetrics.ebitdaMarginPct}% Margin
+            </div>
+          </div>
+
+          {/* 6. EBIT */}
+          <div className="p-3 rounded-xl border bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800">
+            <span className="text-[10px] uppercase font-bold text-teal-600 dark:text-teal-400 block truncate">
+              EBIT (Op Profit)
+            </span>
+            <div className="text-sm sm:text-base font-bold font-mono text-teal-700 dark:text-teal-300 mt-0.5">
+              {formatINR(finMetrics.ebitPaise)}
+            </div>
+            <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-1">
+              Depr: {formatINR(finMetrics.depreciationPaise)}
+            </div>
+          </div>
+
+          {/* 7. PBT */}
+          <div className="p-3 rounded-xl border bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800">
+            <span className="text-[10px] uppercase font-bold text-indigo-600 dark:text-indigo-400 block truncate">
+              PBT (Pre-Tax)
+            </span>
+            <div className="text-sm sm:text-base font-bold font-mono text-indigo-700 dark:text-indigo-300 mt-0.5">
+              {formatINR(finMetrics.pbtPaise)}
+            </div>
+            <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-1">
+              {finMetrics.pbtMarginPct}% Margin
+            </div>
+          </div>
+
+          {/* 8. PAT / NP */}
+          <div className="p-3 rounded-xl border bg-blue-50/60 dark:bg-blue-950/30 border-blue-500/30">
+            <span className="text-[10px] uppercase font-bold text-blue-700 dark:text-blue-300 block truncate">
+              PAT / Net Profit
+            </span>
+            <div className="text-sm sm:text-base font-bold font-mono text-blue-700 dark:text-blue-200 mt-0.5">
+              {formatINR(finMetrics.patPaise)}
+            </div>
+            <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 mt-1">
+              {finMetrics.patMarginPct}% Net NP
+            </div>
+          </div>
+        </div>
+
+        {/* Unit Economics per Kilogram & Statutory GST Dual Strips */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 text-xs pt-1">
+          {/* Left Box: Per KG Unit Economics & Markups */}
+          <div className="p-3.5 rounded-xl border bg-slate-50/70 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800 space-y-2">
+            <div className="flex items-center justify-between text-slate-700 dark:text-slate-300 font-bold">
+              <span className="flex items-center gap-1.5 text-xs text-[#9E1C23] dark:text-amber-400">
+                <Scale className="w-3.5 h-3.5" />
+                <span>Unit Economics per Kilogram Packed</span>
+              </span>
+              <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                Volume: {finMetrics.totalKilogramsPacked.toLocaleString()} kg
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-1 font-mono text-[11px]">
+              <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
+                <span className="text-[9.5px] font-sans font-semibold text-slate-500 dark:text-slate-400 block">COGS / kg</span>
+                <span className="font-bold text-rose-600 dark:text-rose-400">₹{(finMetrics.cogsPerKgPaise / 100).toFixed(2)}</span>
+              </div>
+              <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
+                <span className="text-[9.5px] font-sans font-semibold text-slate-500 dark:text-slate-400 block">OPEX / kg</span>
+                <span className="font-bold text-amber-600 dark:text-amber-400">₹{(finMetrics.opexPerKgPaise / 100).toFixed(2)}</span>
+              </div>
+              <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
+                <span className="text-[9.5px] font-sans font-semibold text-slate-500 dark:text-slate-400 block">Total Cost / kg</span>
+                <span className="font-bold text-slate-900 dark:text-white">₹{(finMetrics.totalCostPerKgPaise / 100).toFixed(2)}</span>
+              </div>
+              <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
+                <span className="text-[9.5px] font-sans font-semibold text-slate-500 dark:text-slate-400 block">Realization / kg</span>
+                <span className="font-bold text-blue-600 dark:text-blue-400">₹{(finMetrics.realizationPerKgPaise / 100).toFixed(2)}</span>
+              </div>
+              <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-center col-span-2 sm:col-span-1">
+                <span className="text-[9.5px] font-sans font-semibold text-emerald-700 dark:text-emerald-400 block">Markup / kg</span>
+                <span className="font-bold text-emerald-700 dark:text-emerald-300">
+                  +₹{(finMetrics.markupPerKgPaise / 100).toFixed(2)} ({finMetrics.markupPct}%)
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Box: Statutory GST Compliance & ITC Position */}
+          <div className="p-3.5 rounded-xl border bg-slate-50/70 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800 space-y-2">
+            <div className="flex items-center justify-between text-slate-700 dark:text-slate-300 font-bold">
+              <span className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400">
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>GST Statutory Compliance &amp; Claimable ITC</span>
+              </span>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md font-bold">
+                Net ITC Surplus
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 pt-1 font-mono text-[11px]">
+              <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
+                <span className="text-[9.5px] font-sans font-semibold text-slate-500 dark:text-slate-400 block">Claimable Input ITC</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatINR(finMetrics.eligibleItcPaise)}</span>
+              </div>
+              <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
+                <span className="text-[9.5px] font-sans font-semibold text-slate-500 dark:text-slate-400 block">Output GST Liability</span>
+                <span className="font-bold text-rose-600 dark:text-rose-400">{formatINR(finMetrics.outputGstLiabilityPaise)}</span>
+              </div>
+              <div className="p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-center">
+                <span className="text-[9.5px] font-sans font-semibold text-indigo-700 dark:text-indigo-400 block">Net Carry Forward</span>
+                <span className="font-bold text-indigo-700 dark:text-indigo-300">
+                  +{formatINR(Math.abs(finMetrics.netGstPositionPaise))}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Visual Waterfall Progression Bar */}
+        <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1.5">
+          <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
+            <span>P&amp;L Value Conversion: Turnover (100%) ➔ Net Profit ({finMetrics.patMarginPct}%)</span>
+            <span>Operating Leverage: EBITDA {finMetrics.ebitdaMarginPct}%</span>
+          </div>
+
+          <div className="h-4 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex shadow-inner">
+            <div
+              style={{ width: `${finMetrics.cogsPct}%` }}
+              title={`COGS: ${finMetrics.cogsPct}%`}
+              className="bg-rose-500 h-full flex items-center justify-center text-[9px] font-bold text-white overflow-hidden"
+            >
+              COGS {finMetrics.cogsPct}%
+            </div>
+            <div
+              style={{ width: `${finMetrics.opexPct}%` }}
+              title={`OPEX: ${finMetrics.opexPct}%`}
+              className="bg-amber-500 h-full flex items-center justify-center text-[9px] font-bold text-white overflow-hidden"
+            >
+              OPEX {finMetrics.opexPct}%
+            </div>
+            <div
+              style={{ width: `3%` }}
+              title={`Depr + Tax + Fin`}
+              className="bg-slate-400 h-full"
+            />
+            <div
+              style={{ width: `${finMetrics.patMarginPct}%` }}
+              title={`PAT (Net Profit): ${finMetrics.patMarginPct}%`}
+              className="bg-emerald-500 h-full flex items-center justify-center text-[9px] font-bold text-white overflow-hidden"
+            >
+              PAT {finMetrics.patMarginPct}%
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Main 8-Card Money Grid: Dual Light/Dark Theme, Pure Native Adaptive Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">

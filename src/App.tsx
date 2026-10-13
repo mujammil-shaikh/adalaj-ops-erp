@@ -19,6 +19,7 @@ import { MachinesModule } from './components/modules/MachinesModule';
 import { AdvertisingModule } from './components/modules/AdvertisingModule';
 import { LicencesModule } from './components/modules/LicencesModule';
 import { DataBackupModule } from './components/modules/DataBackupModule';
+import { InvoicesAndQuotationsModule } from './components/modules/InvoicesAndQuotationsModule';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { db } from './lib/storage';
 import { AuthUser, ROLE_PERMISSIONS } from './types';
@@ -89,6 +90,8 @@ function AppContent() {
             onOpenQuickAdd={handleOpenQuickAdd}
           />
         );
+      case 'invoices':
+        return <InvoicesAndQuotationsModule />;
       case 'batches':
         return (
           <BatchesModule
