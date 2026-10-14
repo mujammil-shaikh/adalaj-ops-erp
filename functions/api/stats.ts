@@ -1,9 +1,13 @@
 interface Env {
-  DB?: D1Database;
-  RATE_LIMIT_KV?: KVNamespace;
+  DB: D1Database;
 }
 
-const STATIC_TABLE_FALLBACK = [
+// In-memory cache for table names to eliminate repeated D1 queries (0 row reads on subsequent edge requests)
+let cachedTables: string[] | null = null;
+let lastCacheTime = 0;
+const CACHE_TTL_MS = 3600 * 1000; // 1 hour edge in-memory TTL
+
+const STATIC_ENTERPRISE_TABLES = [
   'accounts',
   'bills',
   'campaigns',
@@ -31,89 +35,95 @@ const STATIC_TABLE_FALLBACK = [
   'sister_downstream_invoices',
   'stock_lots',
   'stock_movements',
-  'transactions'
+  'transactions',
 ];
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
-  const cacheKey = 'adalaj_erp_d1_stats_cache_v1';
-  const headers = {
-    'Content-Type': 'application/json',
-    'Cache-Control': 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400',
-  };
+  const now = Date.now();
 
-  // 1. Check Edge KV cache to eliminate 99.9%+ of D1 queries
-  if (context.env.RATE_LIMIT_KV) {
-    try {
-      const cached = await context.env.RATE_LIMIT_KV.get(cacheKey);
-      if (cached) {
-        return new Response(cached, {
-          headers: {
-            ...headers,
-            'X-Cache': 'HIT-KV',
-          },
-        });
+  // 1. If in-memory cache is fresh, return immediately without touching D1 (0 row reads)
+  if (cachedTables && now - lastCacheTime < CACHE_TTL_MS) {
+    return new Response(
+      JSON.stringify({
+        status: 'ok',
+        d1Connected: true,
+        source: 'edge_memory_cache',
+        database: 'adalaj-erp-db',
+        tables: cachedTables,
+        timestamp: new Date().toISOString(),
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800',
+        },
       }
-    } catch {}
+    );
   }
 
-  // 2. If D1 is not bound
+  // 2. If D1 binding is not attached or in preview
   if (!context.env.DB) {
     return new Response(
       JSON.stringify({
         status: 'ok',
         d1Connected: false,
-        message: 'D1 binding not attached or running in local offline mode',
-        tables: STATIC_TABLE_FALLBACK,
+        source: 'static_schema',
+        message: 'D1 binding not attached or running in preview mode',
+        tables: STATIC_ENTERPRISE_TABLES,
+        timestamp: new Date().toISOString(),
       }),
-      { headers }
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=3600, s-maxage=86400',
+        },
+      }
     );
   }
 
-  // 3. Query D1 table metadata safely with quota protection
+  // 3. Attempt query with try/catch fallback so quota limits never crash the app
   try {
     const tablesQuery = await context.env.DB.prepare(
       "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' ORDER BY name;"
     ).all();
 
-    const tableNames = tablesQuery.results?.map((r: any) => r.name) || STATIC_TABLE_FALLBACK;
-    const payload = JSON.stringify({
-      status: 'ok',
-      d1Connected: true,
-      database: 'adalaj-erp-db',
-      tables: tableNames,
-      timestamp: new Date().toISOString(),
-    });
+    cachedTables = tablesQuery.results?.map((r: any) => r.name) || STATIC_ENTERPRISE_TABLES;
+    lastCacheTime = now;
 
-    // Cache in KV for 24 hours so D1 is queried at most once a day
-    if (context.env.RATE_LIMIT_KV) {
-      try {
-        await context.env.RATE_LIMIT_KV.put(cacheKey, payload, { expirationTtl: 86400 });
-      } catch {}
-    }
-
-    return new Response(payload, {
-      headers: {
-        ...headers,
-        'X-Cache': 'MISS-D1',
-      },
-    });
-  } catch (error: any) {
-    // Graceful fallback if Cloudflare D1 daily quota is exceeded (code 7500)
-    const isQuotaError = error?.message?.includes('daily row read limit') || error?.message?.includes('7500');
     return new Response(
       JSON.stringify({
         status: 'ok',
-        d1Connected: !isQuotaError,
+        d1Connected: true,
+        source: 'd1_query',
         database: 'adalaj-erp-db',
-        tables: STATIC_TABLE_FALLBACK,
-        quotaLimited: isQuotaError,
-        warning: isQuotaError ? 'D1 read quota limited; serving static schema fallback' : error.message,
+        tables: cachedTables,
         timestamp: new Date().toISOString(),
       }),
       {
         headers: {
-          ...headers,
-          'X-Cache': 'FALLBACK',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800',
+        },
+      }
+    );
+  } catch (error: any) {
+    // Graceful degradation: If account D1 row read limit was exceeded by another service,
+    // do not throw 500. Return static schema with resilient status.
+    return new Response(
+      JSON.stringify({
+        status: 'ok',
+        d1Connected: false,
+        d1Status: 'quota_resilient_fallback',
+        warning: 'Cloudflare account D1 quota limit reached or database unavailable; falling back to resilient static schema.',
+        database: 'adalaj-erp-db',
+        tables: STATIC_ENTERPRISE_TABLES,
+        timestamp: new Date().toISOString(),
+      }),
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=3600, s-maxage=86400',
         },
       }
     );

@@ -18,14 +18,16 @@ export const OfflineIndicator: React.FC = () => {
     };
     const handleOffline = () => setIsOnline(false);
 
-    const handleOutboxChange = () => updateOutbox();
+    const handleOutboxEvent = () => updateOutbox();
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-    window.addEventListener('packing_ops_outbox_event', handleOutboxChange);
+    window.addEventListener('adalaj-outbox-updated', handleOutboxEvent);
 
-    // Initial outbox check & relaxed 30s background check (only if document is visible)
+    // Initial outbox check
     updateOutbox();
+
+    // Relaxed 30-second interval only when tab is actively visible (saves battery & CPU across 20-40 team devices)
     const interval = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
         updateOutbox();
@@ -35,7 +37,7 @@ export const OfflineIndicator: React.FC = () => {
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('packing_ops_outbox_event', handleOutboxChange);
+      window.removeEventListener('adalaj-outbox-updated', handleOutboxEvent);
       clearInterval(interval);
     };
   }, []);

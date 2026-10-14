@@ -1,5 +1,5 @@
 interface Env {
-  DB?: D1Database;
+  DB: D1Database;
 }
 
 export const onRequestGet: PagesFunction<Env> = async () => {
@@ -11,12 +11,13 @@ export const onRequestGet: PagesFunction<Env> = async () => {
       version: '1.1.0',
       jurisdiction: 'Adalaj, Gujarat, India',
       edgePlatform: 'Cloudflare Pages & Workers Isolates',
+      zeroReadOptimized: true,
       timestamp: new Date().toISOString(),
     }),
     {
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=60, s-maxage=300',
+        'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800',
       },
     }
   );

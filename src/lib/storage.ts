@@ -3306,6 +3306,9 @@ class StorageEngine {
   private set<T>(key: string, value: T): void {
     try {
       localStorage.setItem(key, JSON.stringify(value));
+      if (typeof window !== 'undefined' && key === STORAGE_KEYS.OUTBOX) {
+        window.dispatchEvent(new CustomEvent('adalaj-outbox-updated'));
+      }
     } catch (e) {
       console.warn('Storage set failed:', e);
     }
@@ -3662,25 +3665,16 @@ class StorageEngine {
       synced: false,
     };
     this.set(STORAGE_KEYS.OUTBOX, [newItem, ...outbox]);
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('packing_ops_outbox_event'));
-    }
   }
 
   clearSyncedOutbox(): void {
     const pending = this.getOutbox().filter((i) => !i.synced);
     this.set(STORAGE_KEYS.OUTBOX, pending);
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('packing_ops_outbox_event'));
-    }
   }
 
   markAllSynced(): void {
     const updated = this.getOutbox().map((i) => ({ ...i, synced: true }));
     this.set(STORAGE_KEYS.OUTBOX, updated);
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('packing_ops_outbox_event'));
-    }
   }
 
   // Advertising Campaigns (Section 13.3)
