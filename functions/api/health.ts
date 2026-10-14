@@ -1,8 +1,8 @@
 interface Env {
-  DB: D1Database;
+  DB?: D1Database;
 }
 
-export const onRequestGet: PagesFunction<Env> = async (context) => {
+export const onRequestGet: PagesFunction<Env> = async () => {
   return new Response(
     JSON.stringify({
       status: 'operational',
@@ -16,7 +16,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     {
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'no-store',
+        'Cache-Control': 'public, max-age=60, s-maxage=300',
       },
     }
   );

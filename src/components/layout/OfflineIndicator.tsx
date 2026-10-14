@@ -18,16 +18,24 @@ export const OfflineIndicator: React.FC = () => {
     };
     const handleOffline = () => setIsOnline(false);
 
+    const handleOutboxChange = () => updateOutbox();
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    window.addEventListener('packing_ops_outbox_event', handleOutboxChange);
 
-    // Initial outbox check & periodic poll
+    // Initial outbox check & relaxed 30s background check (only if document is visible)
     updateOutbox();
-    const interval = setInterval(updateOutbox, 3000);
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        updateOutbox();
+      }
+    }, 30000);
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('packing_ops_outbox_event', handleOutboxChange);
       clearInterval(interval);
     };
   }, []);
